@@ -1,69 +1,111 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
 
-export default function Home() {
+import { useCallback, useState, type FormEvent } from 'react';
+
+import { supabase } from '@/lib/supabase';
+
+import estilos from './page.module.css';
+
+/**
+ * Entrada do aluno.
+ *
+ * A conta é a mesma do aplicativo. Quem chega aqui normalmente é quem tem
+ * iPhone e não tem por onde entrar — por isso a página não pede cadastro:
+ * quem cria a conta é a academia.
+ */
+export default function PaginaDeEntrada(): React.JSX.Element {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [entrando, setEntrando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const entrar = useCallback(
+    async (evento: FormEvent) => {
+      evento.preventDefault();
+      setErro(null);
+      setEntrando(true);
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: senha,
+        });
+        if (error !== null) {
+          // Não assuma senha errada: sem rede, a pessoa digitaria a senha certa
+          // de novo e de novo achando que errou. Mesmo cuidado do aplicativo.
+          setErro(
+            /fetch|network|failed/i.test(error.message)
+              ? 'Falha de conexão. Verifique sua internet e tente novamente.'
+              : 'E-mail ou senha inválidos.',
+          );
+          return;
+        }
+        window.location.href = '/inicio';
+      } catch {
+        setErro('Falha de conexão. Verifique sua internet e tente novamente.');
+      } finally {
+        setEntrando(false);
+      }
+    },
+    [email, senha],
+  );
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className={estilos.tela}>
+      <form className={estilos.cartao} onSubmit={entrar}>
+        <h1 className={estilos.marca}>Snake Thai</h1>
+        <p className={estilos.chamada}>
+          Acompanhe sua frequência, veja suas aulas e envie o comprovante de pagamento.
+        </p>
+
+        <div className={estilos.campo}>
+          <label className={estilos.rotulo} htmlFor="email">
+            E-mail
+          </label>
+          <input
+            id="email"
+            className={estilos.entrada}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="voce@exemplo.com"
+            value={email}
+            onChange={(evento) => setEmail(evento.target.value)}
+            disabled={entrando}
+            required
+          />
+        </div>
+
+        <div className={estilos.campo}>
+          <label className={estilos.rotulo} htmlFor="senha">
+            Senha
+          </label>
+          <input
+            id="senha"
+            className={estilos.entrada}
+            type="password"
+            autoComplete="current-password"
+            value={senha}
+            onChange={(evento) => setSenha(evento.target.value)}
+            disabled={entrando}
+            required
+          />
+        </div>
+
+        {erro !== null ? (
+          <p className={estilos.erro} role="alert">
+            {erro}
           </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        ) : null}
+
+        <button className={estilos.botao} type="submit" disabled={entrando}>
+          {entrando ? 'Entrando…' : 'Entrar'}
+        </button>
+
+        <p className={estilos.rodape}>
+          Sua conta é criada pela academia. Esqueceu a senha? Procure a recepção — um
+          administrador reinicia seu acesso.
+        </p>
+      </form>
+    </main>
   );
 }

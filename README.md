@@ -16,7 +16,8 @@ financeiro —, e é por aqui que ele acompanha tudo.
 - Ver as próximas aulas, avisar falta e enviar justificativa
 - Ver as mensalidades e enviar o comprovante de pagamento
 
-Gestão da academia (alunos, turmas, aprovação de comprovante) continua no
+**Só alunos entram aqui.** Professores e administradores são barrados na
+entrada: a chamada, a aprovação de comprovantes e a gestão da academia vivem no
 aplicativo Android.
 
 ## Como funciona

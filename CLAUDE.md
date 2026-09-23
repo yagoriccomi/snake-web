@@ -9,7 +9,11 @@ comprovante de pagamento.
 * **É** a interface web do aluno. Mesma conta, mesmo banco, mesmas regras de acesso do app.
 * **Não é** um segundo produto. Toda regra de negócio vive no banco (`snake-thai/supabase/migrations`)
   ou no backend (`snake-server`). Aqui há tela, e só.
-* **Não é** painel de administrador. Gestão continua no app.
+* **Não é** painel de administrador nem de professor. **Só aluno entra aqui** —
+  e isso é um bloqueio de verdade, não ausência de tela: quem não tem o papel
+  `user` tem a sessão encerrada na entrada, com a explicação de que a gestão
+  vive no aplicativo. Deixar um professor entrar num lugar sem as ferramentas
+  dele é pior que barrar na porta.
 
 Escopo da primeira versão (decidido com o dono da academia em 2026-09-23):
 entrar, primeiro acesso (senha e dados), aceitar os termos, ver a própria
