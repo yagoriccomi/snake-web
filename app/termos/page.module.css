@@ -1,0 +1,121 @@
+.pagina {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 0 0 8px;
+  font-size: 17px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.versao {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.texto {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.documento {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * O texto legal rola dentro da própria caixa. Sem isso ele empurra o botão de
+ * aceitar para fora da tela — e sem aceitar, ninguém entra.
+ */
+.corpo {
+  max-height: 40vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.aceite {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  /* Área de toque confortável para a caixa e o rótulo juntos. */
+  min-height: var(--hit);
+  padding: 8px 0;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.aceite input {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.botao {
+  min-height: var(--hit);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.botaoSecundario {
+  min-height: var(--hit);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0 16px;
+  align-self: flex-start;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+.aviso {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}

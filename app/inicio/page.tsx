@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  buscarDocumentosPendentes,
   buscarFrequencia,
   buscarMensalidadesAbertas,
   buscarProximasAulas,
@@ -62,6 +63,20 @@ export default function PaginaInicial(): React.JSX.Element {
       if (perfil.role !== 'user') {
         await supabase.auth.signOut();
         setEstado('nao-e-aluno');
+        return;
+      }
+
+      // Aceite pendente manda para os termos ANTES de qualquer dado aparecer.
+      // Sem isso a tela existiria, mas dava para ignorá-la — e o que prova o
+      // consentimento é a linha no banco, não a boa vontade de quem navega.
+      try {
+        const aAceitar = await buscarDocumentosPendentes();
+        if (aAceitar.length > 0) {
+          window.location.href = '/termos';
+          return;
+        }
+      } catch {
+        setEstado('erro');
         return;
       }
 

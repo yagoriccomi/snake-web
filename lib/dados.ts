@@ -110,3 +110,83 @@ export const ROTULO_DA_SITUACAO: Record<Mensalidade['situacao'], string> = {
   pending_approval: 'Em análise',
   paid: 'Paga',
 };
+
+// ----------------------------------------------------------------------------
+// Política de Privacidade e Termos de Uso
+// ----------------------------------------------------------------------------
+
+export type TipoDeDocumento = 'privacy_policy' | 'terms_of_use';
+
+export interface DocumentoLegal {
+  id: string;
+  tipo: TipoDeDocumento;
+  versao: string;
+  /** Só vem na consulta com texto. */
+  conteudo?: string;
+}
+
+const NOME_DO_DOCUMENTO: Record<TipoDeDocumento, string> = {
+  privacy_policy: 'a Política de Privacidade',
+  terms_of_use: 'os Termos de Uso',
+};
+
+/** Política antes dos Termos — a mesma ordem do aplicativo. */
+function ordenar<T extends { tipo: TipoDeDocumento }>(documentos: T[]): T[] {
+  const peso: Record<TipoDeDocumento, number> = { privacy_policy: 0, terms_of_use: 1 };
+  return [...documentos].sort((a, b) => peso[a.tipo] - peso[b.tipo]);
+}
+
+/** O que a pessoa precisa aceitar antes de usar. Vazio = está em dia. */
+export async function buscarDocumentosPendentes(): Promise<DocumentoLegal[]> {
+  const { data, error } = await supabase.rpc('documentos_legais_pendentes');
+  if (error !== null) {
+    throw error;
+  }
+  return ordenar(
+    ((data ?? []) as Array<Record<string, unknown>>).map((linha) => ({
+      id: String(linha.id),
+      tipo: linha.tipo as TipoDeDocumento,
+      versao: String(linha.versao),
+    })),
+  );
+}
+
+/** Documentos vigentes COM o texto, para a pessoa ler antes de aceitar. */
+export async function buscarDocumentosComTexto(): Promise<DocumentoLegal[]> {
+  const { data, error } = await supabase.rpc('documentos_legais_vigentes');
+  if (error !== null) {
+    throw error;
+  }
+  return ordenar(
+    ((data ?? []) as Array<Record<string, unknown>>).map((linha) => ({
+      id: String(linha.id),
+      tipo: linha.tipo as TipoDeDocumento,
+      versao: String(linha.versao),
+      conteudo: String(linha.conteudo ?? ''),
+    })),
+  );
+}
+
+/**
+ * Registra o aceite. O banco carimba quem, quando e qual versão — é essa linha
+ * que prova o consentimento, então ela nunca é escrita pela interface.
+ */
+export async function aceitarDocumentos(ids: readonly string[]): Promise<void> {
+  const { error } = await supabase.rpc('aceitar_documentos_legais', { p_documentos: [...ids] });
+  if (error !== null) {
+    throw error;
+  }
+}
+
+export function rotuloDoAceite(documentos: readonly { tipo: TipoDeDocumento }[]): string {
+  if (documentos.length === 0) {
+    return 'Li e concordo com os Termos de Uso e a Política de Privacidade.';
+  }
+  const nomes = ordenar([...documentos]).map((documento) => NOME_DO_DOCUMENTO[documento.tipo]);
+  return `Li e concordo com ${nomes.join(' e ')}.`;
+}
+
+export const TITULO_DO_DOCUMENTO: Record<TipoDeDocumento, string> = {
+  privacy_policy: 'Política de Privacidade',
+  terms_of_use: 'Termos de Uso',
+};
