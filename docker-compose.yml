@@ -1,0 +1,23 @@
+# Ambiente local do snake-web.
+#
+# O banco NÃO sobe aqui: é o mesmo Supabase local do app Android DEV, que a
+# Supabase CLI orquestra no repositório `snake-thai` (`scripts\db-dev start`).
+# Subir outro banco aqui daria dois bancos diferentes contando a mesma turma.
+services:
+  web:
+    build: .
+    container_name: snake-web-dev
+    ports:
+      - '3001:3001'
+    volumes:
+      # Código montado para recarregar ao salvar; node_modules e .next ficam no
+      # contêiner, senão o do Windows sobrescreve o do Linux e o build quebra.
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.local
+    extra_hosts:
+      # O navegador alcança o Supabase em localhost:55321; se algum dia algo
+      # precisar sair do contêiner, sai por aqui.
+      - 'host.docker.internal:host-gateway'
