@@ -78,6 +78,30 @@ variáveis vivem no painel da Vercel.
 A **Vercel** faz o build e serve a página, apontando para o banco real e para o
 `snake-server` na Render. O `Dockerfile` daqui é só para o ambiente local.
 
+Configuração: a Vercel reconhece o Next.js sozinha — não mude comando de build,
+diretório de saída nem root directory. As três variáveis da tabela acima entram
+em *Settings → Environment Variables*, com os valores de **produção**.
+
+**Domínio em produção:** <https://snake-web-eight.vercel.app>
+
+### O CORS do backend precisa conhecer este domínio
+
+O `snake-server` nasce fechado para navegador: com a lista de origens vazia, ele
+recusa qualquer página. O aplicativo nunca esbarrou nisso porque app nativo não
+manda cabeçalho `Origin` — a web é o primeiro cliente de navegador do backend.
+
+Na Render, em `ALLOWED_ORIGIN`:
+
+```
+ALLOWED_ORIGIN=https://snake-web-eight.vercel.app
+```
+
+**Sem barra no final.** O cabeçalho `Origin` do navegador é sempre esquema, host
+e porta, sem caminho, e a comparação no servidor é exata. Com a barra, entrar e
+ver os dados continua funcionando — eles vêm direto do Supabase — e **só o envio
+do comprovante falha**, que é a única parte que passa pelo backend. O erro
+aparece no console do navegador e não diz que o motivo é uma barra.
+
 ## Repositórios irmãos
 
 | Repositório | Papel |
