@@ -17,6 +17,14 @@ services:
       - /app/.next
     env_file:
       - .env.local
+    environment:
+      # Sem isto NÃO HÁ recarga ao salvar. O código vem por bind mount do
+      # Windows, e o evento de "arquivo mudou" não atravessa para o Linux do
+      # contêiner: o observador precisa perguntar, em vez de esperar o aviso.
+      # O sintoma é traiçoeiro — o arquivo novo está lá dentro, mas o servidor
+      # continua entregando o compilado antigo, e parece que a edição sumiu.
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     extra_hosts:
       # O navegador alcança o Supabase em localhost:55321; se algum dia algo
       # precisar sair do contêiner, sai por aqui.
