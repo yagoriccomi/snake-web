@@ -1,0 +1,95 @@
+.pagina {
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  padding: 32px 16px 48px;
+}
+
+.formulario {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--primary-text);
+}
+
+.texto {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rotulo {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.entrada {
+  min-height: var(--hit);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-background);
+  color: var(--text-primary);
+}
+
+.entrada:disabled {
+  opacity: 0.6;
+}
+
+.dica {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--warning);
+  line-height: 1.4;
+}
+
+.dicaOk {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+.botao {
+  min-height: var(--hit);
+  margin-top: 8px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.botao:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.aviso {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}

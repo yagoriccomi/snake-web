@@ -190,3 +190,93 @@ export const TITULO_DO_DOCUMENTO: Record<TipoDeDocumento, string> = {
   privacy_policy: 'Política de Privacidade',
   terms_of_use: 'Termos de Uso',
 };
+
+// ----------------------------------------------------------------------------
+// Avisar falta e justificar
+// ----------------------------------------------------------------------------
+
+/** Limite do banco para o texto da justificativa. */
+export const TAMANHO_MAXIMO_DA_JUSTIFICATIVA = 255;
+
+export type SituacaoDeclarada = 'present' | 'absent';
+
+export interface Justificativa {
+  classId: string;
+  mensagem: string | null;
+  situacao: 'pending' | 'approved' | 'rejected';
+}
+
+/**
+ * Avisa que vem ou que falta.
+ *
+ * Grava em `declared_status`, NUNCA em `status`: a presença só vale pela
+ * chamada do professor. O aviso é intenção, não presença — se a interface
+ * escrevesse no lugar errado, o aluno marcaria a própria frequência.
+ */
+export async function avisarPresenca(
+  classId: string,
+  userId: string,
+  declarada: SituacaoDeclarada,
+): Promise<void> {
+  const { error } = await supabase
+    .from('attendance')
+    .upsert(
+      { class_id: classId, user_id: userId, declared_status: declarada },
+      { onConflict: 'class_id,user_id' },
+    );
+  if (error !== null) {
+    throw error;
+  }
+}
+
+/** Justificativas do próprio aluno, por aula. */
+export async function buscarMinhasJustificativas(userId: string): Promise<Justificativa[]> {
+  const { data, error } = await supabase
+    .from('absence_justifications')
+    .select('class_id, message, status')
+    .eq('user_id', userId);
+  if (error !== null) {
+    throw error;
+  }
+  return (data ?? []).map((linha) => ({
+    classId: String(linha.class_id),
+    mensagem: linha.message === null ? null : String(linha.message),
+    situacao: linha.status as Justificativa['situacao'],
+  }));
+}
+
+/**
+ * Envia a justificativa da falta.
+ *
+ * Sem anexo por enquanto: o arquivo exigiria o mesmo caminho assinado do
+ * comprovante, e a academia aceita justificativa só com o texto. O anexo entra
+ * quando alguém precisar mandar atestado.
+ */
+export async function justificarFalta(
+  classId: string,
+  userId: string,
+  mensagem: string,
+): Promise<void> {
+  const texto = mensagem.trim();
+  if (texto === '') {
+    throw new Error('Escreva o motivo da falta.');
+  }
+  if (texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA) {
+    throw new Error(`A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`);
+  }
+  const { error } = await supabase
+    .from('absence_justifications')
+    .upsert(
+      { class_id: classId, user_id: userId, message: texto },
+      { onConflict: 'class_id,user_id' },
+    );
+  if (error !== null) {
+    throw error;
+  }
+}
+
+export const ROTULO_DA_JUSTIFICATIVA: Record<Justificativa['situacao'], string> = {
+  pending: 'Em análise',
+  approved: 'Aceita',
+  rejected: 'Recusada',
+};

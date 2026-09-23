@@ -48,7 +48,7 @@ export default function PaginaInicial(): React.JSX.Element {
 
       const { data: perfil, error } = await supabase
         .from('profiles')
-        .select('name, role')
+        .select('name, role, is_first_login')
         .eq('id', usuario.id)
         .maybeSingle();
 
@@ -63,6 +63,13 @@ export default function PaginaInicial(): React.JSX.Element {
       if (perfil.role !== 'user') {
         await supabase.auth.signOut();
         setEstado('nao-e-aluno');
+        return;
+      }
+
+      // Primeiro acesso vem antes de tudo: a senha ainda é a que a academia
+      // conhece, e o cadastro pode estar incompleto.
+      if (perfil.is_first_login === true) {
+        window.location.href = '/primeiro-acesso';
         return;
       }
 
@@ -187,12 +194,15 @@ export default function PaginaInicial(): React.JSX.Element {
                     Vence em {formatarData(mensalidade.vencimento)}
                   </p>
                 </div>
-                <span
-                  className={estilos.selo}
-                  data-situacao={mensalidade.situacao}
-                >
-                  {ROTULO_DA_SITUACAO[mensalidade.situacao]}
-                </span>
+                {mensalidade.situacao === 'pending_approval' ? (
+                  <span className={estilos.selo} data-situacao={mensalidade.situacao}>
+                    {ROTULO_DA_SITUACAO[mensalidade.situacao]}
+                  </span>
+                ) : (
+                  <a className={estilos.pagar} href={`/pagar/${mensalidade.id}`}>
+                    Pagar
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -200,9 +210,14 @@ export default function PaginaInicial(): React.JSX.Element {
       </section>
 
       <section className={estilos.bloco} aria-labelledby="aulas">
-        <h2 className={estilos.secao} id="aulas">
-          Próximas aulas
-        </h2>
+        <div className={estilos.cabecalhoDaSecao}>
+          <h2 className={estilos.secao} id="aulas">
+            Próximas aulas
+          </h2>
+          <a className={estilos.verTodas} href="/aulas">
+            Avisar falta
+          </a>
+        </div>
         {aulas.length === 0 ? (
           <p className={estilos.vazio}>Nenhuma aula marcada por enquanto.</p>
         ) : (

@@ -1,0 +1,134 @@
+.pagina {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hit);
+}
+
+.titulo {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.texto {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.cartao {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.secao {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Selecionável de propósito: é a saída quando copiar falha. */
+.chave {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--primary-text);
+  user-select: all;
+  word-break: break-all;
+}
+
+.dica {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.botao {
+  min-height: var(--hit);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.botaoSecundario {
+  min-height: var(--hit);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/*
+ * O seletor nativo é escondido, mas continua no fluxo de foco e acessível
+ * pelo rótulo — `display: none` o tiraria da navegação por teclado.
+ */
+.arquivo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.arquivo:focus-visible + .botao {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 2px;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+.aviso {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.voltar {
+  min-height: var(--hit);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  text-decoration: none;
+}
