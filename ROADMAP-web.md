@@ -27,7 +27,7 @@
 | **Visto funcionando** | **Só o login e a página inicial**, por você |
 | **Testes** | Nenhum |
 | **CI** | Nenhum. A Vercel compila a cada push, e é só isso |
-| **Hooks de commit** | Nenhum (os irmãos têm Husky e commitlint) |
+| **Hooks de commit** | Husky desde 25/09: `pre-commit` com lint e typecheck, `commit-msg` com commitlint |
 | **Cabeçalhos de segurança** | Nenhum (`next.config.ts` está vazio) |
 
 **O que está faltando, em ordem de gravidade:**
@@ -49,9 +49,9 @@ direto para produção.
 
 | # | Item | Skill | Quem |
 | --- | --- | --- | --- |
-| 0.1 | Script `typecheck` (`tsc --noEmit`) no `package.json`. Hoje o typecheck só roda à mão | `git-flow-projeto` | 🤖 |
-| 0.2 | Husky: **pre-commit** com lint e typecheck; **commit-msg** com commitlint (Conventional Commits, como nos irmãos) | `git-flow-projeto` | 🤖 |
-| 0.3 | **Trabalhar com branch e PR daqui em diante.** A Vercel gera uma URL de pré-visualização para cada PR, o que dá para testar no celular **antes** de chegar à produção | `git-flow-projeto` | 🤖 + 👤 |
+| 0.1 | [x] Script `typecheck` (`tsc --noEmit`) no `package.json`. Hoje o typecheck só roda à mão | `git-flow-projeto` | 🤖 |
+| 0.2 | [x] Husky: **pre-commit** com lint e typecheck; **commit-msg** com commitlint (Conventional Commits, como nos irmãos) | `git-flow-projeto` | 🤖 |
+| 0.3 | [x] **Trabalhar com branch e PR daqui em diante.** A Vercel gera uma URL de pré-visualização para cada PR, o que dá para testar no celular **antes** de chegar à produção | `git-flow-projeto` | 🤖 + 👤 |
 | 0.4 | Proteger a `main` no GitHub (merge só por PR) | — | 👤 |
 
 Jira fica de fora: foi adiado no app e recusado no servidor, e a web segue os irmãos.
@@ -384,7 +384,7 @@ compila. O ganho real só aparece quando a Fase 4 existir. [#76]
 
 | Decisão | Recomendação | Onde |
 | --- | --- | --- |
-| Trabalhar com branch e PR | Sim, com pré-visualização da Vercel | 0.3 |
+| Trabalhar com branch e PR | **Adotado em 25/09** (PR da Fase 0). Falta o 0.4, proteger a `main` | 0.3 |
 | Cabeçalho com "Início" e "Sair" | **Decidida em 24/09:** a linha F aprovada traz **Início · Aulas · Sair** | 5.1 |
 | Central de avisos na web | Sim, só leitura | 7.1 |
 | E2E com Playwright | Só se a web crescer | 4.3 |
@@ -416,3 +416,4 @@ compila. O ganho real só aparece quando a Fase 4 existir. [#76]
 | 2026-09-24 | Contrato **v3** (D43–D55): menu de aulas, troca de aula, aula extra do fixo, contato da academia, aviso de atualização (só do app) e guarda de 180 dias; D34 ampliada ("a web faz tudo o que o aluno faz"). Mockups na **versão 6**, com as linhas G e H. **Linha F (web) aprovada pelo dono**, com o cabeçalho Início · Aulas · Sair (5.1 decidido). O dono conferiu na Render que o `ALLOWED_ORIGIN` é o domínio da Vercel (contrato § 13.4): a Fase 2 não espera mais por isso. |
 | 2026-09-25 | Revisão da v3 com as respostas do dono às P1–P22: **D56** (extra em qualquer aula, inclusive "só livres"), **D57** e **T50** (troca abonada quando a aula nova é cancelada), **D58** (histórico de turma); G3 passa a 23 RPCs. Mockups na **versão 8**; a prancheta "Web — escolher aulas e trocar" (linha G) aguarda o **G0**. **Fase 6 atualizada para a v3:** itens novos 6.12 a 6.15; 6.0, 6.1, 6.2, 6.6 a 6.11 ampliados; G0 e G5 entre os portões; compatibilidade da web atual (§ 15). Referências ao roadmap do app corrigidas (central de avisos: 4.4 → 5.1). *Só como informação:* no servidor, o lote de dependências (PR #22) foi mesclado em 25/09, e o `/health` respondeu ok. |
 | 2026-09-25 | **G0 aberto** (registrado no ROADMAP do `snake-thai`): mockups versão 8 aprovados, inclusive a prancheta "Web — escolher aulas e trocar", e contrato v3 com a revisão de 25/09. A Fase 6 pode começar; a publicação espera o G4. |
+| 2026-09-25 | **Fase 0 (0.1 a 0.3) feita** na branch `chore/fundacao`, em PR (plano em `docs/planos/PLANO-fase-0-fundacao.md`): script `typecheck`; Husky com `pre-commit` (lint + typecheck) e `commit-msg` (commitlint com a regra do `snake-server`); `prepare` com `|| exit 0` para não quebrar a instalação da Vercel. Para o gate nascer verde, os 3 erros de lint que já existiam foram corrigidos (`<a>` → `Link` na inicial; carga fora do corpo do efeito em `/aulas` e `/termos`); ficam 16 avisos de `window.location.href`, que o guarda do 6.0 resolve. **O PR não foi mesclado:** mesclar publica. Falta o **0.4** (👤). |

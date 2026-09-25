@@ -62,6 +62,19 @@ Pronto: <http://localhost:3001>.
 
 Sem Docker, `npm install && npm run dev -- --port 3001` faz o mesmo.
 
+## Contribuindo
+
+**Todo push na `main` publica na Vercel.** Por isso o trabalho entra por branch e
+*pull request*: a Vercel gera uma URL de pré-visualização para cada PR, e dá para
+conferir no celular antes de chegar à produção.
+
+O `npm install` liga dois ganchos do Git (Husky):
+
+- **antes do commit**, `npm run lint` e `npm run typecheck`;
+- **na mensagem**, o padrão Conventional Commits (`feat: …`, `fix: …`, `docs: …`).
+
+Os dois comandos também rodam à mão.
+
 ## Variáveis de ambiente
 
 | Variável | O que é |

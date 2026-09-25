@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# ============================================================
+#  Gate de qualidade LOCAL. Todo push na main publica na Vercel:
+#  barrar aqui custa segundos; barrar em produção custa o aluno.
+#  Os testes entram aqui quando a suíte existir (Fase 4).
+# ============================================================
+
+# 1. Lint do projeto inteiro: a web é pequena e leva segundos. [#5]
+echo "-> rodando o lint..."
+npm run lint || exit 1
+
+# 2. Typecheck: uma mudança num arquivo pode quebrar o tipo de outro. [#11]
+echo "-> verificando tipos..."
+npm run typecheck || exit 1
