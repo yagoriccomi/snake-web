@@ -2,9 +2,9 @@
 
 > **Atualizado em:** 2026-09-25, com o contrato **v3** (revisão de 25/09) e os mockups na
 > **versão 8**. Criado em 2026-09-24, a partir do handoff daquela sessão.
-> **Repositórios irmãos:** [`snake-thai/ROADMAP.md`](../snake-thai/ROADMAP.md) (app e banco,
+> **Repositórios irmãos:** [`snake-thai/ROADMAP-thai.md`](../snake-thai/ROADMAP-thai.md) (app e banco,
 > onde está o marco "pronto para o primeiro aluno real") ·
-> [`snake-server/ROADMAP.md`](../snake-server/ROADMAP.md)
+> [`snake-server/ROADMAP-server.md`](../snake-server/ROADMAP-server.md)
 
 **Como usar**
 
@@ -128,12 +128,12 @@ senha de um aluno em Gerenciar alunos → chave, e entre com a senha de primeiro
 
 ## Fase 2 — Produção
 
-Depende da Fase 1 do [`snake-thai/ROADMAP.md`](../snake-thai/ROADMAP.md) (sem ela, o aluno
+Depende da Fase 1 do [`snake-thai/ROADMAP-thai.md`](../snake-thai/ROADMAP-thai.md) (sem ela, o aluno
 "Não usa" chega em produção sem nome nem CPF).
 
 **O domínio em `ALLOWED_ORIGIN` já não bloqueia esta fase:** o dono conferiu na Render, em 24/09,
 que o valor é o domínio da Vercel, sem barra (item 2.1 do
-[`snake-server/ROADMAP.md`](../snake-server/ROADMAP.md); contrato § 13.4). A prova sem navegador
+[`snake-server/ROADMAP-server.md`](../snake-server/ROADMAP-server.md); contrato § 13.4). A prova sem navegador
 (item 2.2 do servidor) continua valendo antes do 2.2 daqui: se o primeiro envio falhar, ela
 separa um erro de CORS de uma falha da Cloudinary.
 
@@ -234,8 +234,8 @@ Hoje não existe nenhum. Proposta enxuta, focada no que quebra em silêncio: [#4
 2. **Nenhuma regra de negócio nesta camada** (como sempre): quem decide o que o aluno vê, a conta
    da frequência, a cota, a meta, o prazo e se uma aula pode ser extra ou troca é o banco. A web
    chama as RPCs e mostra.
-3. **Portões** (contrato § 14). Para saber se um portão abriu, **leia o `ROADMAP.md` do
-   repositório dono**:
+3. **Portões** (contrato § 14). Para saber se um portão abriu, **leia o roadmap do
+   repositório dono** (`ROADMAP-thai.md` ou `ROADMAP-server.md`):
    - **G0** (você aprova o contrato v3 e os mockups versão 8, inclusive a prancheta da web da
      linha G; fica anotado no ROADMAP do `snake-thai`) → nada da Fase 6 começa antes, exceto o 6.0;
    - **G3** (as 23 RPCs do aluno no banco local; na v3 entraram `menu_de_aulas`,
