@@ -74,17 +74,17 @@ async function pedirAssinatura(paymentId: string): Promise<UploadAssinado> {
  * @param arquivo   Imagem ou PDF escolhido pela pessoa.
  */
 export async function enviarComprovante(paymentId: string, arquivo: File): Promise<void> {
-  const assinatura = await pedirAssinatura(paymentId);
-
-  // Ambiente sem credenciais da Cloudinary (o de desenvolvimento) assina com
-  // `PREENCHER_...` no lugar do nome da conta. Mandar o arquivo para lá dá um
-  // erro que parece culpa do arquivo. O aplicativo cai para o Storage nesse
-  // caso, e aqui é a mesma coisa: o envio funciona, só muda onde o arquivo
-  // mora — e `proof_provider` registra qual dos dois foi.
-  if (assinatura.uploadUrl.includes('PREENCHER')) {
+  // O ambiente de desenvolvimento não tem credenciais da Cloudinary, e mandar
+  // o arquivo para lá dá um erro que parece culpa do arquivo. Nele, o envio vai
+  // para o Storage, como no aplicativo: só muda onde o arquivo mora, e
+  // `proof_provider` registra qual dos dois foi. A escolha é uma variável
+  // explícita, não uma palavra dentro da URL assinada: o desvio fica visível.
+  if (env.proofUploadToStorage) {
     await enviarParaStorage(paymentId, arquivo);
     return;
   }
+
+  const assinatura = await pedirAssinatura(paymentId);
 
   const formulario = new FormData();
   formulario.append('file', arquivo, nomeSeguro(arquivo.name));
