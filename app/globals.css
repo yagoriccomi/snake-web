@@ -25,6 +25,13 @@
 
   --radius: 12px;
   --radius-pill: 9999px;
+  /*
+   * Borda de campo de digitação: 3:1 contra o fundo (WCAG 1.4.11) nos dois
+   * temas. Derivada de um token do app, não é cor nova: a --border sozinha
+   * fica em 1,3:1, e o campo some na tela.
+   */
+  --input-border: color-mix(in srgb, var(--text-secondary) 70%, transparent);
+
   /* Área de toque mínima, igual à do aplicativo. */
   --hit: 44px;
 }

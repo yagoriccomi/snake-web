@@ -113,17 +113,19 @@
 
 .selo[data-situacao='overdue'] {
   background: color-mix(in srgb, var(--error) 16%, transparent);
-  color: var(--error);
+  /* A cor pura sobre o fundo tingido fica abaixo de 4,5:1 no tema claro (texto
+     de 12 px); misturada ao texto principal, passa nos dois temas. */
+  color: color-mix(in srgb, var(--error) 80%, var(--text-primary));
 }
 
 .selo[data-situacao='pending_approval'] {
   background: color-mix(in srgb, var(--warning) 20%, transparent);
-  color: var(--warning);
+  color: color-mix(in srgb, var(--warning) 80%, var(--text-primary));
 }
 
 .selo[data-situacao='paid'] {
   background: color-mix(in srgb, var(--success) 16%, transparent);
-  color: var(--success);
+  color: color-mix(in srgb, var(--success) 80%, var(--text-primary));
 }
 
 .texto {
