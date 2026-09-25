@@ -2,13 +2,18 @@
 # ============================================================
 #  Gate de qualidade LOCAL. Todo push na main publica na Vercel:
 #  barrar aqui custa segundos; barrar em produção custa o aluno.
-#  Os testes entram aqui quando a suíte existir (Fase 4).
 # ============================================================
 
-# 1. Lint do projeto inteiro: a web é pequena e leva segundos. [#5]
+# 1. Lint do projeto inteiro: a web é pequena e leva segundos. Só os erros
+#    barram; os avisos aparecem no `npm run lint`. [#5]
 echo "-> rodando o lint..."
-npm run lint || exit 1
+npm run lint -- --quiet || exit 1
 
 # 2. Typecheck: uma mudança num arquivo pode quebrar o tipo de outro. [#11]
 echo "-> verificando tipos..."
 npm run typecheck || exit 1
+
+# 3. Testes. Sem --passWithNoTests: "nenhum teste encontrado" é sintoma de
+#    suíte sumida, não estado aceitável. [#49]
+echo "-> rodando testes..."
+npm test || exit 1
