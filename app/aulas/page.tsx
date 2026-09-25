@@ -97,7 +97,7 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
   );
 
   if (estado === 'carregando') {
-    return <main className={estilos.aviso}>Carregando…</main>;
+    return <main className={estilos.aviso} role="status">Carregando…</main>;
   }
 
   if (estado === 'erro') {

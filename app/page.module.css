@@ -43,7 +43,7 @@
 .entrada {
   min-height: var(--hit);
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: var(--radius);
   background: var(--input-background);
   color: var(--text-primary);
