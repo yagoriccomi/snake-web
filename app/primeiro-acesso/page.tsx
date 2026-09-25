@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
+import { concluirPrimeiroAcesso } from '@/lib/primeiroAcesso';
 import { supabase } from '@/lib/supabase';
 import {
   apenasDigitos,
@@ -112,28 +113,14 @@ export default function PaginaDePrimeiroAcesso(): React.JSX.Element {
           return;
         }
 
-        // O perfil PRIMEIRO, a senha depois. Trocar a senha encerra e recria a
-        // sessão; se viesse antes, a gravação do perfil pegaria a sessão no
-        // meio da troca e o primeiro acesso ficaria pela metade — com a senha
-        // nova e o cadastro incompleto, que é o pior dos dois mundos.
-        const { error: erroDoPerfil } = await supabase
-          .from('profiles')
-          .update({
-            name: nome.trim(),
-            cpf: apenasDigitos(cpf),
-            phone: apenasDigitos(celular),
-            dob: nascimentoIso,
-            is_first_login: false,
-          })
-          .eq('id', usuario.id);
-        if (erroDoPerfil !== null) {
-          throw erroDoPerfil;
-        }
-
-        const { error: erroDaSenha } = await supabase.auth.updateUser({ password: senha });
-        if (erroDaSenha !== null) {
-          throw erroDaSenha;
-        }
+        await concluirPrimeiroAcesso(supabase, {
+          userId: usuario.id,
+          nome: nome.trim(),
+          cpf: apenasDigitos(cpf),
+          celular: apenasDigitos(celular),
+          nascimentoIso,
+          senha,
+        });
 
         window.location.href = '/inicio';
       } catch {
