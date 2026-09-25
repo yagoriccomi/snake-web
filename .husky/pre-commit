@@ -4,9 +4,10 @@
 #  barrar aqui custa segundos; barrar em produção custa o aluno.
 # ============================================================
 
-# 1. Lint do projeto inteiro: a web é pequena e leva segundos. [#5]
+# 1. Lint do projeto inteiro: a web é pequena e leva segundos. Só os erros
+#    barram; os avisos aparecem no `npm run lint`. [#5]
 echo "-> rodando o lint..."
-npm run lint || exit 1
+npm run lint -- --quiet || exit 1
 
 # 2. Typecheck: uma mudança num arquivo pode quebrar o tipo de outro. [#11]
 echo "-> verificando tipos..."
