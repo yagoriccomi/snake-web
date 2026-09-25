@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { Protegida } from '@/components/Protegida';
 import {
   aceitarDocumentos,
   buscarDocumentosComTexto,
@@ -24,6 +25,10 @@ type Estado = 'carregando' | 'pronto' | 'erro';
  * também — esta tela só pergunta.
  */
 export default function PaginaDeTermos(): React.JSX.Element {
+  return <Protegida etapa="termos">{() => <Termos />}</Protegida>;
+}
+
+function Termos(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [pendentes, setPendentes] = useState<DocumentoLegal[]>([]);
   const [textos, setTextos] = useState<DocumentoLegal[]>([]);
@@ -33,11 +38,6 @@ export default function PaginaDeTermos(): React.JSX.Element {
 
   const carregar = useCallback(async () => {
     try {
-      const { data: sessao } = await supabase.auth.getSession();
-      if (sessao.session === null) {
-        window.location.href = '/';
-        return;
-      }
       const [aAceitar, comTexto] = await Promise.all([
         buscarDocumentosPendentes(),
         buscarDocumentosComTexto(),

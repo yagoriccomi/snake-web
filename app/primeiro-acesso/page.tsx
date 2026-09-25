@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
+import { Protegida } from '@/components/Protegida';
 import { concluirPrimeiroAcesso } from '@/lib/primeiroAcesso';
 import { supabase } from '@/lib/supabase';
 import {
@@ -29,6 +30,14 @@ import estilos from './page.module.css';
  * preenchidos pela academia: aqui ele confirma e completa o que falta.
  */
 export default function PaginaDePrimeiroAcesso(): React.JSX.Element {
+  return (
+    <Protegida etapa="primeiro-acesso">
+      {(usuario) => <PrimeiroAcesso userId={usuario.id} />}
+    </Protegida>
+  );
+}
+
+function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
   const [carregando, setCarregando] = useState(true);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
@@ -41,23 +50,13 @@ export default function PaginaDePrimeiroAcesso(): React.JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      const { data: sessao } = await supabase.auth.getSession();
-      const usuario = sessao.session?.user;
-      if (usuario === undefined) {
-        window.location.href = '/';
-        return;
-      }
       const { data: perfil } = await supabase
         .from('profiles')
-        .select('name, cpf, phone, dob, is_first_login, role')
-        .eq('id', usuario.id)
+        .select('name, cpf, phone, dob, is_first_login')
+        .eq('id', userId)
         .maybeSingle();
 
-      if (perfil === null || perfil.role !== 'user') {
-        window.location.href = '/inicio';
-        return;
-      }
-      if (perfil.is_first_login !== true) {
+      if (perfil === null || perfil.is_first_login !== true) {
         window.location.href = '/inicio';
         return;
       }
@@ -71,7 +70,7 @@ export default function PaginaDePrimeiroAcesso(): React.JSX.Element {
       }
       setCarregando(false);
     })();
-  }, []);
+  }, [userId]);
 
   const concluir = useCallback(
     async (evento: FormEvent) => {
