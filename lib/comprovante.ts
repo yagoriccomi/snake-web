@@ -97,11 +97,11 @@ export async function enviarComprovante(paymentId: string, arquivo: File): Promi
 
   const envio = await fetch(assinatura.uploadUrl, { method: 'POST', body: formulario });
   if (!envio.ok) {
-    // O provedor explica a recusa no corpo. Jogar fora esse texto transforma
-    // qualquer problema num "não foi aceito" sem causa — foi o que aconteceu
-    // quando a conta não estava configurada e a tela culpou o arquivo.
-    const detalhe = await envio.text().catch(() => '');
-    console.error(`Upload recusado (HTTP ${envio.status}): ${detalhe.slice(0, 300)}`);
+    // Só o status vai para o console. O corpo da recusa pode trazer o
+    // public_id, que carrega o id da pessoa, e o console do navegador não é
+    // lugar de dado pessoal. O status basta para separar conta mal
+    // configurada (4xx) de falha do provedor (5xx).
+    console.error(`Upload recusado pela Cloudinary (HTTP ${envio.status}).`);
     throw new ErroDeEnvio(
       envio.status >= 500
         ? 'O serviço de arquivos falhou. Tente de novo em instantes.'
@@ -147,7 +147,11 @@ async function enviarParaStorage(paymentId: string, arquivo: File): Promise<void
     .from('payment_proofs')
     .upload(caminho, arquivo, { contentType: arquivo.type, upsert: true });
   if (erroDoEnvio !== null) {
-    console.error(erroDoEnvio);
+    // Só o status: a mensagem do Storage pode repetir o caminho, que começa
+    // pelo id da pessoa.
+    console.error(
+      `Envio ao Storage recusado (HTTP ${'status' in erroDoEnvio ? String(erroDoEnvio.status) : '?'}).`,
+    );
     throw new ErroDeEnvio('Não foi possível enviar o arquivo. Tente de novo.');
   }
 
