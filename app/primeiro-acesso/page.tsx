@@ -131,7 +131,7 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
   );
 
   if (carregando) {
-    return <main className={estilos.aviso}>Carregando…</main>;
+    return <main className={estilos.aviso} role="status">Carregando…</main>;
   }
 
   const pendenciasDaSenha = senha === '' ? [] : faltaNaSenha(senha);
@@ -218,15 +218,22 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             autoComplete="new-password"
+            aria-describedby="dica-da-senha"
             disabled={salvando}
           />
           {/* Dizer o que falta enquanto digita evita o vaivém de tentar,
               ser recusado e adivinhar qual regra quebrou. */}
-          {pendenciasDaSenha.length > 0 ? (
-            <p className={estilos.dica}>Falta: {pendenciasDaSenha.join(', ')}.</p>
-          ) : senha !== '' ? (
-            <p className={estilos.dicaOk}>Senha forte ✓</p>
-          ) : null}
+          {/* A região existe sempre: o leitor de tela só anuncia mudança numa
+              região viva que já estava na página. */}
+          <div id="dica-da-senha" aria-live="polite">
+            {pendenciasDaSenha.length > 0 ? (
+              <p className={estilos.dica}>Falta: {pendenciasDaSenha.join(', ')}.</p>
+            ) : senha !== '' ? (
+              <p className={estilos.dicaOk}>
+                Senha forte <span aria-hidden="true">✓</span>
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className={estilos.campo}>
