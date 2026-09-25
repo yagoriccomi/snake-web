@@ -1,10 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
+import { Protegida, type UsuarioLiberado } from '@/components/Protegida';
 import {
-  buscarDocumentosPendentes,
   buscarFrequencia,
   buscarMensalidadesAbertas,
   buscarProximasAulas,
@@ -23,14 +22,18 @@ import estilos from './page.module.css';
 /** Abaixo disso a academia considera risco de evasão — mesma régua do app. */
 const FREQUENCIA_MINIMA = 70;
 
-type Estado = 'carregando' | 'pronto' | 'erro' | 'nao-e-aluno';
+type Estado = 'carregando' | 'pronto' | 'erro';
 
 export default function PaginaInicial(): React.JSX.Element {
+  return <Protegida etapa="aluno">{(usuario) => <Inicio usuario={usuario} />}</Protegida>;
+}
+
+function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
-  const [nome, setNome] = useState('');
   const [frequencia, setFrequencia] = useState<Frequencia | null>(null);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
   const [aulas, setAulas] = useState<Aula[]>([]);
+  const nome = (usuario.nome ?? 'aluno').split(' ')[0];
 
   const sair = useCallback(() => {
     void supabase.auth.signOut().then(() => {
@@ -40,56 +43,6 @@ export default function PaginaInicial(): React.JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      const { data: sessao } = await supabase.auth.getSession();
-      const usuario = sessao.session?.user;
-      if (usuario === undefined) {
-        window.location.href = '/';
-        return;
-      }
-
-      const { data: perfil, error } = await supabase
-        .from('profiles')
-        .select('name, role, is_first_login')
-        .eq('id', usuario.id)
-        .maybeSingle();
-
-      if (error !== null || perfil === null) {
-        setEstado('erro');
-        return;
-      }
-
-      // Esta página é do aluno. Professor e administrador trabalham no
-      // aplicativo, com telas que aqui não existem — deixá-los entrar num
-      // lugar sem as ferramentas deles é pior que barrar na porta.
-      if (perfil.role !== 'user') {
-        await supabase.auth.signOut();
-        setEstado('nao-e-aluno');
-        return;
-      }
-
-      // Primeiro acesso vem antes de tudo: a senha ainda é a que a academia
-      // conhece, e o cadastro pode estar incompleto.
-      if (perfil.is_first_login === true) {
-        window.location.href = '/primeiro-acesso';
-        return;
-      }
-
-      // Aceite pendente manda para os termos ANTES de qualquer dado aparecer.
-      // Sem isso a tela existiria, mas dava para ignorá-la — e o que prova o
-      // consentimento é a linha no banco, não a boa vontade de quem navega.
-      try {
-        const aAceitar = await buscarDocumentosPendentes();
-        if (aAceitar.length > 0) {
-          window.location.href = '/termos';
-          return;
-        }
-      } catch {
-        setEstado('erro');
-        return;
-      }
-
-      setNome(String(perfil.name ?? 'aluno').split(' ')[0]);
-
       try {
         const [freq, pagamentos, proximas] = await Promise.all([
           buscarFrequencia(usuario.id),
@@ -104,25 +57,10 @@ export default function PaginaInicial(): React.JSX.Element {
         setEstado('erro');
       }
     })();
-  }, []);
+  }, [usuario.id]);
 
   if (estado === 'carregando') {
     return <main className={estilos.aviso}>Carregando…</main>;
-  }
-
-  if (estado === 'nao-e-aluno') {
-    return (
-      <main className={estilos.aviso}>
-        <h1 className={estilos.titulo}>Esta página é só para alunos</h1>
-        <p className={estilos.texto}>
-          Professores e administradores trabalham pelo aplicativo — é lá que ficam a chamada,
-          a aprovação de comprovantes e a gestão da academia.
-        </p>
-        <Link className={estilos.botaoLink} href="/">
-          Voltar
-        </Link>
-      </main>
-    );
   }
 
   if (estado === 'erro') {
