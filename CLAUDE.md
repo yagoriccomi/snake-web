@@ -72,7 +72,10 @@ site (`localhost`), nunca nomes de serviço do Docker.
 * **Nada falha em silêncio.** Toda chamada tem estado de carregando, vazio e
   erro, e o erro diz o que fazer. Sem stack trace na tela.
 * **Área de toque mínima de 44 px** e rótulo acessível em tudo que é clicável.
-* **Commits no padrão Conventional Commits.**
+* **Commits no padrão Conventional Commits**, validados pelo commitlint no hook
+  `commit-msg`; o `pre-commit` roda lint e typecheck.
+* **Branch e PR, nunca push direto na `main`**: a `main` publica na Vercel, e o PR
+  ganha uma pré-visualização para conferir antes.
 
 ## 6. LGPD
 
