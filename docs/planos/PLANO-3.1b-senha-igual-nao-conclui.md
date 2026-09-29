@@ -76,6 +76,7 @@
 
 ## 8. Definição de Pronto
 
-- [ ] Passos 1–4
-- [ ] `npm test`, `npm run lint` (0 erros), `npm run typecheck` e `next build` no topo da pilha
-- [ ] Levado às branches de cima com merge, sem `push --force`
+- [x] Passos 1–4
+- [x] `npm test`, `npm run lint` (0 erros), `npm run typecheck` e `next build` no topo da pilha
+- [x] Levado às branches de cima com merge, sem `push --force`
+- [x] PR #4 mesclado em 29/09
