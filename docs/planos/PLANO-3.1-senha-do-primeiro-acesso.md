@@ -25,8 +25,10 @@
 
 **Vou fazer:**
 - `lib/primeiroAcesso.ts`: dados sem a flag → `auth.updateUser` → `is_first_login = false`.
-- Segunda tentativa depois de uma troca parcial: o Supabase responde `same_password`, que aqui
-  significa "a senha já é a nova"; segue para a marcação.
+- ~~Segunda tentativa depois de uma troca parcial: o Supabase responde `same_password`, que aqui
+  significa "a senha já é a nova"; segue para a marcação.~~ **Revisto em 29/09 (C1):** "senha
+  igual" nunca é sucesso, porque a senha atual pode ser a da academia. Ver
+  `PLANO-3.1b-senha-igual-nao-conclui.md`.
 - Vitest (primeira suíte da web) com o caminho de falha (4.2), e os testes no `pre-commit`.
 
 **NÃO vou fazer (escopo negativo)** [#8]:
