@@ -32,8 +32,6 @@ export default function PaginaDeTermos(): React.JSX.Element {
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
-    setEstado('carregando');
-    setErro(null);
     try {
       const { data: sessao } = await supabase.auth.getSession();
       if (sessao.session === null) {
@@ -56,7 +54,16 @@ export default function PaginaDeTermos(): React.JSX.Element {
     }
   }, []);
 
+  // O estado só muda depois da rede, nunca no corpo do efeito: nada de render em cascata.
   useEffect(() => {
+    void (async () => {
+      await carregar();
+    })();
+  }, [carregar]);
+
+  const tentarDeNovo = useCallback(() => {
+    setEstado('carregando');
+    setErro(null);
     void carregar();
   }, [carregar]);
 
@@ -81,7 +88,7 @@ export default function PaginaDeTermos(): React.JSX.Element {
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
         <p className={estilos.texto}>Verifique sua internet e tente de novo.</p>
-        <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
+        <button className={estilos.botaoSecundario} type="button" onClick={tentarDeNovo}>
           Tentar de novo
         </button>
       </main>

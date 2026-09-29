@@ -57,8 +57,11 @@ export default function PaginaDeAulas(): React.JSX.Element {
     }
   }, []);
 
+  // O estado só muda depois da rede, nunca no corpo do efeito: nada de render em cascata.
   useEffect(() => {
-    void carregar();
+    void (async () => {
+      await carregar();
+    })();
   }, [carregar]);
 
   const avisar = useCallback(

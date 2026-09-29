@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -117,9 +118,9 @@ export default function PaginaInicial(): React.JSX.Element {
           Professores e administradores trabalham pelo aplicativo — é lá que ficam a chamada,
           a aprovação de comprovantes e a gestão da academia.
         </p>
-        <a className={estilos.botaoLink} href="/">
+        <Link className={estilos.botaoLink} href="/">
           Voltar
-        </a>
+        </Link>
       </main>
     );
   }
