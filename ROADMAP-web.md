@@ -25,7 +25,7 @@
 | **Código** | 6 commits, **todos direto na `main`**. 7 rotas. `tsc --noEmit` limpo (conferido em 24/09) |
 | **Produção** | <https://snake-web-eight.vercel.app> |
 | **Visto funcionando** | **Só o login e a página inicial**, por você |
-| **Testes** | Nenhum |
+| **Testes** | Vitest desde 25/09: o primeiro acesso (6 testes, caminho de falha incluído) |
 | **CI** | Nenhum. A Vercel compila a cada push, e é só isso |
 | **Hooks de commit** | Husky desde 25/09: `pre-commit` com lint e typecheck, `commit-msg` com commitlint |
 | **Cabeçalhos de segurança** | Nenhum (`next.config.ts` está vazio) |
@@ -154,7 +154,7 @@ separa um erro de CORS de uma falha da Cloudinary.
 
 | # | Item | Skill | Gravidade |
 | --- | --- | --- | --- |
-| 3.1 | **Primeiro acesso pode deixar a senha padrão para sempre** | `executar-projeto` + `testes-projeto` | **Alta** |
+| 3.1 | [x] **Primeiro acesso pode deixar a senha padrão para sempre** | `executar-projeto` + `testes-projeto` | **Alta** |
 | 3.2 | **Cabeçalhos de segurança** | `seguranca-projeto` | Média |
 | 3.3 | **`console.error` com a resposta do provedor** | `executar-projeto` | Baixa |
 | 3.4 | O desvio para o Storage é decidido por uma palavra dentro da URL assinada (`PREENCHER`) | `executar-projeto` | Baixa |
@@ -165,8 +165,14 @@ separa um erro de CORS de uma falha da Cloudinary.
   `supabase.auth.updateUser({ password })`. Se a troca de senha falhar e a pessoa sair, a
   próxima visita a `/primeiro-acesso` a manda para `/inicio`, e a **senha que a academia
   conhece continua valendo**.
-- **Mesmo defeito no app:** item 2.4 do roadmap do app. **Corrigir os dois juntos, com a mesma
-  regra**, e com teste do caminho de falha.
+- **Corrigido em 25/09** (`lib/primeiroAcesso.ts`): dados sem a flag → troca de senha → só então
+  `is_first_login = false`.
+- **Revisto em 29/09 (C1 da coordenação):** `same_password` **nunca** conta como sucesso. Quem
+  digita como senha nova a senha que a academia deu recebe "A nova senha precisa ser diferente da
+  anterior." e continua pendente. Uma senha que já passou nesta tela não é trocada de novo quando a
+  pessoa repete o envio (a marcação falhou). Plano: `docs/planos/PLANO-3.1b-senha-igual-nao-conclui.md`.
+- **Mesmo defeito no app:** item 2.4 do roadmap do app. **Vale a regra do app** (P2 a P4 de
+  `snake-thai/docs/planos/PLANO-2.4-senha-antes-da-flag.md`), e a web a segue.
 
 **3.2** — `next.config.ts` não envia nenhum cabeçalho de segurança. A página de login pode ser
 embutida num site de terceiros (clickjacking), e não há CSP limitando para onde o navegador fala.
@@ -193,7 +199,7 @@ Hoje não existe nenhum. Proposta enxuta, focada no que quebra em silêncio: [#4
 - [ ] **4.1** Vitest para `lib/validacao.ts` (CPF, data, celular e senha forte) e para
   `problemaNoArquivo`. **A regra de senha precisa bater com a do app e com a do Supabase**: se a
   web aceitar uma senha que o Supabase recusa, o item 3.1 vira realidade.
-- [ ] **4.2** Teste do caminho de falha do primeiro acesso, que nasce junto com a correção 3.1.
+- [x] **4.2** Teste do caminho de falha do primeiro acesso, que nasce junto com a correção 3.1.
 - [ ] **4.3** *(decisão sua)* E2E com Playwright contra o banco local, cobrindo o roteiro da
   Fase 1: é a versão automática do que hoje só você confere clicando. Vale se a web crescer.
   Se ela continuar deste tamanho, o roteiro manual basta. [#43]
@@ -417,3 +423,5 @@ compila. O ganho real só aparece quando a Fase 4 existir. [#76]
 | 2026-09-25 | Revisão da v3 com as respostas do dono às P1–P22: **D56** (extra em qualquer aula, inclusive "só livres"), **D57** e **T50** (troca abonada quando a aula nova é cancelada), **D58** (histórico de turma); G3 passa a 23 RPCs. Mockups na **versão 8**; a prancheta "Web — escolher aulas e trocar" (linha G) aguarda o **G0**. **Fase 6 atualizada para a v3:** itens novos 6.12 a 6.15; 6.0, 6.1, 6.2, 6.6 a 6.11 ampliados; G0 e G5 entre os portões; compatibilidade da web atual (§ 15). Referências ao roadmap do app corrigidas (central de avisos: 4.4 → 5.1). *Só como informação:* no servidor, o lote de dependências (PR #22) foi mesclado em 25/09, e o `/health` respondeu ok. |
 | 2026-09-25 | **G0 aberto** (registrado no ROADMAP do `snake-thai`): mockups versão 8 aprovados, inclusive a prancheta "Web — escolher aulas e trocar", e contrato v3 com a revisão de 25/09. A Fase 6 pode começar; a publicação espera o G4. |
 | 2026-09-25 | **Fase 0 (0.1 a 0.3) feita** na branch `chore/fundacao`, em PR (plano em `docs/planos/PLANO-fase-0-fundacao.md`): script `typecheck`; Husky com `pre-commit` (lint + typecheck) e `commit-msg` (commitlint com a regra do `snake-server`); `prepare` com `|| exit 0` para não quebrar a instalação da Vercel. Para o gate nascer verde, os 3 erros de lint que já existiam foram corrigidos (`<a>` → `Link` na inicial; carga fora do corpo do efeito em `/aulas` e `/termos`); ficam 16 avisos de `window.location.href`, que o guarda do 6.0 resolve. **O PR não foi mesclado:** mesclar publica. Falta o **0.4** (👤). |
+| 2026-09-25 | **3.1 e 4.2 feitos** na branch `fix/primeiro-acesso-senha` (sobre a da Fase 0), em PR; plano em `docs/planos/PLANO-3.1-senha-do-primeiro-acesso.md`. Ordem nova: dados **sem** a flag → `auth.updateUser` → `is_first_login = false`; se a segunda tentativa receber `same_password`, a senha já tinha mudado e a marcação segue. **Conferido no banco local** com 3 contas sintéticas (apagadas no fim): `weak_password` real mantém a flag `true`; `same_password` real conclui. Primeira suíte: Vitest, 6 testes, no `pre-commit`. `@types/node` foi para ^22 (o Vitest 5 pede 22+; o contêiner usa Node 24). ~~**Para o app (2.4), a mesma regra:** flag por último e `same_password` tratado como senha já trocada.~~ *(Pedido retirado em 29/09: vale a regra do app, C1.)* O último item do 1.2 (simular a queda antes de corrigir) ficou para trás: o comportamento antigo está descrito no 3.1. |
+| 2026-09-29 | **Correção C1 no 3.1** (`handoffs/COORDENACAO.md`, 28/09), na `fix/primeiro-acesso-senha` (PR #4), levada às branches de cima com merge. `same_password` deixou de concluir o primeiro acesso: a senha que a academia deu nunca continua valendo. A web segue a regra do app (P2 a P4 do `PLANO-2.4-senha-antes-da-flag.md` do `snake-thai`, PR #45): a senha que já passou nesta tela não é trocada de novo ao repetir o envio (um `useRef` na página), e "senha igual" mostra "A nova senha precisa ser diferente da anterior.", a mesma frase do app. Testes: 9 (4 novos, com o caminho de falha da senha igual). **Retirado** o pedido do Registro de 25/09 para o app copiar a regra da web. Plano: `docs/planos/PLANO-3.1b-senha-igual-nao-conclui.md`. |

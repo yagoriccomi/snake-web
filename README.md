@@ -70,7 +70,7 @@ conferir no celular antes de chegar à produção.
 
 O `npm install` liga dois ganchos do Git (Husky):
 
-- **antes do commit**, `npm run lint` e `npm run typecheck`;
+- **antes do commit**, `npm run lint`, `npm run typecheck` e `npm test` (Vitest);
 - **na mensagem**, o padrão Conventional Commits (`feat: …`, `fix: …`, `docs: …`).
 
 Os dois comandos também rodam à mão.

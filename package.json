@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky || exit 0"
+    "prepare": "husky || exit 0",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
@@ -19,12 +20,13 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "@types/node": "^20",
+    "@types/node": "^22.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "husky": "^9.1.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.2"
   }
 }
