@@ -82,6 +82,7 @@ Os dois comandos também rodam à mão.
 | `NEXT_PUBLIC_SUPABASE_URL` | Endereço do banco. Local: `http://localhost:55321` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima. É pública por natureza — quem protege os dados é a RLS |
 | `NEXT_PUBLIC_API_URL` | Backend próprio. Local: `http://localhost:3000`; produção: a URL da Render |
+| `NEXT_PUBLIC_PROOF_UPLOAD_TO_STORAGE` | Só local: `true` manda o comprovante para o Storage do Supabase, porque a Cloudinary de desenvolvimento não tem credenciais. **Em produção, fica de fora** |
 
 Nenhum segredo entra neste repositório, que é público. Em produção, as
 variáveis vivem no painel da Vercel.
@@ -92,8 +93,9 @@ A **Vercel** faz o build e serve a página, apontando para o banco real e para o
 `snake-server` na Render. O `Dockerfile` daqui é só para o ambiente local.
 
 Configuração: a Vercel reconhece o Next.js sozinha — não mude comando de build,
-diretório de saída nem root directory. As três variáveis da tabela acima entram
-em *Settings → Environment Variables*, com os valores de **produção**.
+diretório de saída nem root directory. As três primeiras variáveis da tabela
+acima entram em *Settings → Environment Variables*, com os valores de
+**produção**; a quarta não entra.
 
 **Domínio em produção:** <https://snake-web-eight.vercel.app>
 
