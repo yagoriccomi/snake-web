@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Protegida } from '@/components/Protegida';
-import { concluirPrimeiroAcesso } from '@/lib/primeiroAcesso';
+import { concluirPrimeiroAcesso, SENHA_IGUAL } from '@/lib/primeiroAcesso';
 import { supabase } from '@/lib/supabase';
 import {
   apenasDigitos,
@@ -47,6 +47,8 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
   const [confirmacao, setConfirmacao] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  /** Senha que já passou no Supabase nesta tela (ver `concluirPrimeiroAcesso`). */
+  const senhaJaTrocada = useRef<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -112,18 +114,30 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
           return;
         }
 
-        await concluirPrimeiroAcesso(supabase, {
-          userId: usuario.id,
-          nome: nome.trim(),
-          cpf: apenasDigitos(cpf),
-          celular: apenasDigitos(celular),
-          nascimentoIso,
-          senha,
-        });
+        await concluirPrimeiroAcesso(
+          supabase,
+          {
+            userId: usuario.id,
+            nome: nome.trim(),
+            cpf: apenasDigitos(cpf),
+            celular: apenasDigitos(celular),
+            nascimentoIso,
+            senha,
+          },
+          senhaJaTrocada,
+        );
 
         window.location.href = '/inicio';
-      } catch {
-        setErro('Não foi possível concluir. Verifique a conexão e tente de novo.');
+      } catch (falha) {
+        // Sem esta mensagem, quem repete a senha da academia tentaria de novo
+        // achando que é a conexão.
+        const senhaIgual =
+          typeof falha === 'object' && falha !== null && 'code' in falha && falha.code === SENHA_IGUAL;
+        setErro(
+          senhaIgual
+            ? 'A nova senha precisa ser diferente da anterior.'
+            : 'Não foi possível concluir. Verifique a conexão e tente de novo.',
+        );
         setSalvando(false);
       }
     },
