@@ -47,8 +47,12 @@ export interface AulaDoAluno {
   publico: Publico;
   cancelada: boolean;
   declarada: SituacaoDaPresenca | null;
+  /** Presença pela chamada do professor; nula sem chamada. */
+  presenca: SituacaoDaPresenca | null;
   justificativa: SituacaoDaJustificativa | null;
   modalidade: Modalidade | null;
+  /** Cota (livre) ou meta (à vontade) da semana da aula; nula no fixo. */
+  meta: number | null;
   professores: Professor[];
   /** Vocabulário da § 7.2 (`turma`, `troca`, `extra`, `trocou`…); nulo = aula que não é dele. */
   origem: string | null;
@@ -108,8 +112,10 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     publico: (texto(linha.audience) ?? 'both') as Publico,
     cancelada: linha.cancelled === true,
     declarada: texto(linha.declared_status) as SituacaoDaPresenca | null,
+    presenca: texto(linha.status) as SituacaoDaPresenca | null,
     justificativa: texto(linha.justification_status) as SituacaoDaJustificativa | null,
     modalidade: texto(linha.schedule_mode) as Modalidade | null,
+    meta: typeof linha.weekly_target === 'number' ? linha.weekly_target : null,
     professores: professores(linha.teachers),
     origem: texto(linha.origem),
     podeMarcarExtra: linha.can_mark_extra === true,
@@ -152,6 +158,14 @@ export function chaveDoDia(instante: Date): string {
 /** 00:00 de hoje em São Paulo. */
 export function inicioDoDia(agora: Date): Date {
   return new Date(`${chaveDoDia(agora)}T00:00:00${DESLOCAMENTO_DE_SAO_PAULO}`);
+}
+
+/** 00:00 da segunda-feira desta semana em São Paulo (a semana vai de seg a dom). */
+export function inicioDaSemana(agora: Date): Date {
+  const hoje = inicioDoDia(agora);
+  const domingoEhZero = new Date(`${chaveDoDia(agora)}T12:00:00Z`).getUTCDay();
+  const diasDesdeSegunda = (domingoEhZero + 6) % 7;
+  return new Date(hoje.getTime() - diasDesdeSegunda * 24 * 60 * 60 * 1000);
 }
 
 function diaDaSemana(instante: Date): string {
@@ -341,4 +355,36 @@ export async function declararAula(
 export function avisoDeCota(declaracao: Declaracao): string | null {
   if (!declaracao.acimaDaCota || declaracao.cota === null) return null;
   return `Você marcou ${declaracao.marcadasNaSemana} aulas nesta semana e seu plano é ${declaracao.cota}x. Pode ir: fica registrado acima do plano.`;
+}
+
+// ----------------------------------------------------------------------------
+// "Esta semana" (6.4), com a mesma leitura das colunas que o app usa
+// ----------------------------------------------------------------------------
+
+export interface ResumoDaSemana {
+  modalidade: Modalidade | null;
+  /** Cota (livre) ou meta (à vontade); nula no fixo. */
+  meta: number | null;
+  /** Presenças confirmadas pela chamada, em aula de rotina. */
+  feitas: number;
+  /** "Vou" ainda sem chamada. */
+  marcadas: number;
+}
+
+/** A partir das aulas da semana (seg a dom); nulo sem aula nenhuma. */
+export function resumoDaSemana(aulas: readonly AulaDoAluno[]): ResumoDaSemana | null {
+  const primeira = aulas[0];
+  if (primeira === undefined) return null;
+  const rotina = aulas.filter((aula) => !aula.evento && !aula.cancelada);
+  return {
+    modalidade: primeira.modalidade,
+    meta: primeira.meta,
+    feitas: rotina.filter((aula) => aula.presenca === 'present').length,
+    marcadas: rotina.filter((aula) => aula.declarada === 'present' && aula.presenca === null).length,
+  };
+}
+
+/** "1 feita", "2 marcadas". */
+export function contagem(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
 }

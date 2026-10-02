@@ -5,7 +5,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { CartaoDeAula } from '@/components/CartaoDeAula';
 import { CartaoDeFrequencia } from '@/components/CartaoDeFrequencia';
 import { Protegida, type UsuarioLiberado } from '@/components/Protegida';
-import { agruparPorDia, buscarAulasDoAluno, chaveDoDia, type AulaDoAluno } from '@/lib/aulas';
+import { ResumoDaSemana } from '@/components/ResumoDaSemana';
+import {
+  agruparPorDia,
+  buscarAulasDoAluno,
+  chaveDoDia,
+  inicioDaSemana,
+  resumoDaSemana,
+  type AulaDoAluno,
+  type ResumoDaSemana as Resumo,
+} from '@/lib/aulas';
 import {
   buscarMensalidadesAbertas,
   formatarData,
@@ -39,6 +48,7 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [mes, setMes] = useState<FrequenciaDoMes | null>(null);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
+  const [resumo, setResumo] = useState<Resumo | null>(null);
   const nome = (usuario.nome ?? 'aluno').split(' ')[0];
 
   const sair = useCallback(() => {
@@ -51,16 +61,19 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
     void (async () => {
       const agora = new Date();
       try {
-        const [daSemana, doMes, pagamentos, proximas] = await Promise.all([
+        const segunda = inicioDaSemana(agora);
+        const [daSemana, doMes, pagamentos, proximas, aulasDaSemana] = await Promise.all([
           buscarFrequenciaDaSemana(supabase, usuario.id, agora),
           buscarFrequenciaDoMes(supabase, usuario.id, chaveDoDia(agora)),
           buscarMensalidadesAbertas(usuario.id),
           buscarAulasDoAluno(supabase, agora, new Date(agora.getTime() + SETE_DIAS_EM_MS)),
+          buscarAulasDoAluno(supabase, segunda, new Date(segunda.getTime() + SETE_DIAS_EM_MS)),
         ]);
         setSemana(daSemana);
         setMes(doMes);
         setMensalidades(pagamentos);
         setAulas(proximas.slice(0, AULAS_NA_INICIAL));
+        setResumo(resumoDaSemana(aulasDaSemana));
         setEstado('pronto');
       } catch {
         setEstado('erro');
@@ -100,6 +113,7 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
           Sua frequência
         </h2>
         <CartaoDeFrequencia semana={semana} mes={mes} />
+        {resumo !== null ? <ResumoDaSemana resumo={resumo} /> : null}
       </section>
 
       <section className={estilos.bloco} aria-labelledby="mens">

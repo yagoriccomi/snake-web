@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   acoesDeDeclarar,
+  contagem,
+  inicioDaSemana,
+  resumoDaSemana,
   agruparPorDia,
   avisoDeCota,
   buscarAulasDoAluno,
@@ -306,5 +309,43 @@ describe('declararAula e avisoDeCota', () => {
   it('sem aviso dentro da cota ou no à vontade (cota nula)', () => {
     expect(avisoDeCota({ marcadasNaSemana: 2, cota: 3, acimaDaCota: false })).toBeNull();
     expect(avisoDeCota({ marcadasNaSemana: 9, cota: null, acimaDaCota: false })).toBeNull();
+  });
+});
+
+describe('Esta semana (6.4)', () => {
+  it('a semana começa na segunda às 00:00 de São Paulo', () => {
+    // Quinta, 24/09/2026, 15:00 em São Paulo → segunda, 21/09.
+    expect(inicioDaSemana(new Date('2026-09-24T18:00:00Z')).toISOString()).toBe(
+      '2026-09-21T03:00:00.000Z',
+    );
+    // Domingo, 27/09, ainda é a semana de 21/09.
+    expect(inicioDaSemana(new Date('2026-09-27T20:00:00Z')).toISOString()).toBe(
+      '2026-09-21T03:00:00.000Z',
+    );
+    // Segunda, 28/09, 00:30 em São Paulo começa a semana nova.
+    expect(inicioDaSemana(new Date('2026-09-28T03:30:00Z')).toISOString()).toBe(
+      '2026-09-28T03:00:00.000Z',
+    );
+  });
+
+  it('feitas pela chamada e marcadas sem chamada, fora evento e cancelada', () => {
+    const resumo = resumoDaSemana([
+      aula({ schedule_mode: 'free', weekly_target: 3, status: 'present', declared_status: 'present' }),
+      aula({ schedule_mode: 'free', weekly_target: 3, declared_status: 'present' }),
+      aula({ schedule_mode: 'free', weekly_target: 3, declared_status: 'present', cancelled: true }),
+      aula({ schedule_mode: 'free', weekly_target: 3, declared_status: 'present', type: 'event' }),
+      aula({ schedule_mode: 'free', weekly_target: 3 }),
+    ]);
+
+    expect(resumo).toEqual({ modalidade: 'free', meta: 3, feitas: 1, marcadas: 1 });
+  });
+
+  it('sem aula na semana, sem resumo', () => {
+    expect(resumoDaSemana([])).toBeNull();
+  });
+
+  it('singular e plural', () => {
+    expect(contagem(1, 'feita', 'feitas')).toBe('1 feita');
+    expect(contagem(0, 'marcada', 'marcadas')).toBe('0 marcadas');
   });
 });

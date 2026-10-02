@@ -1,0 +1,52 @@
+/* "Esta semana" da linha F (versão 8). Só tokens de tema. */
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.titulo {
+  margin: 0;
+  font-weight: 600;
+}
+
+.detalhe {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.barra {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.feitas,
+.marcadas {
+  display: block;
+  height: 100%;
+}
+
+.feitas {
+  background: var(--primary);
+}
+
+.marcadas {
+  background: var(--info);
+}
