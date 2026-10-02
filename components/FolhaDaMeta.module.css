@@ -1,0 +1,89 @@
+/* Folha da meta do à vontade. Só tokens de tema. */
+
+.folha {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.seletor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.passo {
+  width: var(--hit);
+  height: var(--hit);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.passo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.valor {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dica {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+}
+
+.acoes {
+  display: flex;
+  gap: 12px;
+}
+
+.primario,
+.secundario {
+  flex: 1;
+  min-height: var(--hit);
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primario {
+  border: none;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.primario:disabled,
+.secundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

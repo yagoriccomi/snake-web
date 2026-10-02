@@ -27,7 +27,7 @@ export class ErroDeValidacao extends Error {
 }
 
 /** A frase do banco, se a falha for uma recusa `23514` com frase; senão, nula. */
-function fraseDaRecusa(falha: unknown): string | null {
+export function fraseDaRecusa(falha: unknown): string | null {
   if (typeof falha !== 'object' || falha === null) return null;
   const { code, message } = falha as { code?: unknown; message?: unknown };
   if (code !== RECUSA_COM_FRASE || typeof message !== 'string') return null;

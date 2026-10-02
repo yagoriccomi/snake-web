@@ -32,6 +32,8 @@ export interface Mundo {
   planoId: string;
   /** Plano de horário livre com cota de 1x por semana: a segunda marcada já passa da cota. */
   planoLivreId: string;
+  /** Plano à vontade (sem cota; a meta é do aluno). */
+  planoAVontadeId: string;
   turmaId: string;
   /** Turma de que as contas sintéticas não fazem parte. */
   outraTurmaId: string;
@@ -55,6 +57,8 @@ export interface OpcoesDeConta {
   termosAceitos?: boolean;
   /** Horário livre (cota 1x); sem isto, horário fixo. */
   livre?: boolean;
+  /** À vontade; sem isto, horário fixo. */
+  aVontade?: boolean;
 }
 
 let cliente: SupabaseClient | null = null;
@@ -147,6 +151,23 @@ export async function criarMundo(): Promise<Mundo> {
     'criar o plano livre',
   );
 
+  const planoAVontade = exigir(
+    await db
+      .from('plans')
+      .insert({
+        name: `${PREFIXO_DO_PLANO}à vontade ${rodada}`,
+        description: 'Plano sintético do E2E, à vontade.',
+        price_cents: 10000,
+        billing_period: 'monthly',
+        due_day: 10,
+        is_active: true,
+        schedule_mode: 'unlimited',
+      })
+      .select('id')
+      .single(),
+    'criar o plano à vontade',
+  );
+
   const turmaId = `${PREFIXO}${rodada}`;
   const outraTurmaId = `${PREFIXO}${rodada}-outra`;
   exigir(
@@ -188,6 +209,7 @@ export async function criarMundo(): Promise<Mundo> {
     rodada,
     planoId: String(plano.id),
     planoLivreId: String(planoLivre.id),
+    planoAVontadeId: String(planoAVontade.id),
     turmaId,
     outraTurmaId,
   };
@@ -238,7 +260,12 @@ export async function criarConta(mundo: Mundo, opcoes: OpcoesDeConta = {}): Prom
           is_first_login: primeiroAcesso,
           status: 'active',
           group_id: mundo.turmaId,
-          plan_id: opcoes.livre === true ? mundo.planoLivreId : mundo.planoId,
+          plan_id:
+            opcoes.livre === true
+              ? mundo.planoLivreId
+              : opcoes.aVontade === true
+                ? mundo.planoAVontadeId
+                : mundo.planoId,
           access_channel: opcoes.semApp === true ? 'none' : 'app',
         };
   const gravado = await db.from('profiles').insert(perfil);
