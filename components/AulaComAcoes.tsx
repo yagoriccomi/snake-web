@@ -1,6 +1,7 @@
 'use client';
 
 import { CartaoDeAula, SeloDaAula } from '@/components/CartaoDeAula';
+import { FolhaDeTroca } from '@/components/FolhaDeTroca';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import type { AcoesDaAula } from '@/hooks/useAcoesDaAula';
 import {
@@ -17,17 +18,34 @@ import estilos from './AulaComAcoes.module.css';
 /**
  * O cartão da aula com o que o aluno pode fazer nela: à direita, o estado e os
  * botões, escolhidos só pelas colunas (tabela de ações da § 12.2); embaixo, os
- * formulários da justificativa e do "Eu estava na aula".
+ * formulários da justificativa e do "Eu estava na aula" e a folha da troca.
+ *
+ * `semana` (as aulas da semana, no menu) liga o "Trocar para esta": a folha
+ * precisa delas para oferecer a aula que sai.
  */
 export function AulaComAcoes({
   aula,
   acoes,
+  semana,
 }: {
   aula: AulaDoAluno;
   acoes: AcoesDaAula;
+  semana?: readonly AulaDoAluno[];
 }): React.JSX.Element {
+  const podeTrocar = semana !== undefined && aula.podeTrocarPara;
   return (
-    <CartaoDeAula aula={aula} lateral={<LateralDaAula aula={aula} acoes={acoes} />}>
+    <CartaoDeAula
+      aula={aula}
+      lateral={<LateralDaAula aula={aula} acoes={acoes} podeTrocar={podeTrocar} />}
+    >
+      {podeTrocar && acoes.trocandoAula === aula.id ? (
+        <FolhaDeTroca
+          nova={aula}
+          semana={semana}
+          onPedir={acoes.pedirTroca}
+          onFechar={acoes.fecharFormularios}
+        />
+      ) : null}
       {acoes.justificandoAula === aula.id ? (
         <FormularioDeMotivo
           titulo="Justificar a falta"
@@ -55,13 +73,21 @@ export function AulaComAcoes({
 function LateralDaAula({
   aula,
   acoes,
+  podeTrocar,
 }: {
   aula: AulaDoAluno;
   acoes: AcoesDaAula;
+  podeTrocar: boolean;
 }): React.JSX.Element | null {
   const estado = estadoDaAula(aula);
   const declarar = acoesDeDeclarar(aula, new Date());
-  if (estado === null && aula.justificativa === null && declarar.length === 0 && !aula.podeContestar) {
+  if (
+    estado === null &&
+    aula.justificativa === null &&
+    declarar.length === 0 &&
+    !aula.podeContestar &&
+    !podeTrocar
+  ) {
     return null;
   }
 
@@ -85,6 +111,16 @@ function LateralDaAula({
           {acao.rotulo}
         </button>
       ))}
+      {podeTrocar ? (
+        <button
+          className={estilos.botaoLink}
+          type="button"
+          onClick={() => acoes.abrirTroca(aula.id)}
+          disabled={acoes.ocupado}
+        >
+          Trocar para esta
+        </button>
+      ) : null}
       {aula.podeContestar ? (
         <button
           className={estilos.botaoLink}

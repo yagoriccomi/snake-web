@@ -150,7 +150,7 @@ function AulasDaSemana(): React.JSX.Element {
           ) : (
             <ul className={estilos.lista} aria-label={`Aulas de ${aberto.semana} ${aberto.dia}`}>
               {aberto.aulas.map((aula) => (
-                <AulaComAcoes key={aula.id} aula={aula} acoes={acoes} />
+                <AulaComAcoes key={aula.id} aula={aula} acoes={acoes} semana={aulas} />
               ))}
             </ul>
           )}
