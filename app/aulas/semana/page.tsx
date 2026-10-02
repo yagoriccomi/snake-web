@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { AulaComAcoes, AvisoAcimaDaCota, MensagensDasAcoes } from '@/components/AulaComAcoes';
 import { Protegida } from '@/components/Protegida';
@@ -44,18 +44,23 @@ function AulasDaSemana(): React.JSX.Element {
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const [diasDeAula, setDiasDeAula] = useState<number[]>([]);
   const [diaAberto, setDiaAberto] = useState<string | null>(null);
+  // Trocar de aba no meio de uma leitura deixa duas no ar; a que chegar
+  // atrasada não pode trocar a lista da semana que ele está vendo.
+  const ultimaLeitura = useRef(0);
 
   const carregar = useCallback(async () => {
+    const leitura = ++ultimaLeitura.current;
     try {
       const [doMenu, dias] = await Promise.all([
         buscarMenuDeAulas(supabase, segundaDa(semana)),
         buscarDiasDeAula(supabase),
       ]);
+      if (leitura !== ultimaLeitura.current) return;
       setAulas(doMenu);
       setDiasDeAula(dias);
       setEstado('pronto');
     } catch {
-      setEstado('erro');
+      if (leitura === ultimaLeitura.current) setEstado('erro');
     }
   }, [semana]);
 
