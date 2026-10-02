@@ -3,23 +3,25 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { CartaoDeAula } from '@/components/CartaoDeAula';
+import { CartaoDeFrequencia } from '@/components/CartaoDeFrequencia';
 import { Protegida, type UsuarioLiberado } from '@/components/Protegida';
-import { agruparPorDia, buscarAulasDoAluno, type AulaDoAluno } from '@/lib/aulas';
+import { agruparPorDia, buscarAulasDoAluno, chaveDoDia, type AulaDoAluno } from '@/lib/aulas';
 import {
-  buscarFrequencia,
   buscarMensalidadesAbertas,
   formatarData,
   formatarDinheiro,
   ROTULO_DA_SITUACAO,
-  type Frequencia,
   type Mensalidade,
 } from '@/lib/dados';
+import {
+  buscarFrequenciaDaSemana,
+  buscarFrequenciaDoMes,
+  type FrequenciaDaSemana,
+  type FrequenciaDoMes,
+} from '@/lib/frequencia';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
-
-/** Abaixo disso a academia considera risco de evasão — mesma régua do app. */
-const FREQUENCIA_MINIMA = 70;
 
 type Estado = 'carregando' | 'pronto' | 'erro';
 
@@ -33,7 +35,8 @@ export default function PaginaInicial(): React.JSX.Element {
 
 function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
-  const [frequencia, setFrequencia] = useState<Frequencia | null>(null);
+  const [semana, setSemana] = useState<FrequenciaDaSemana | null>(null);
+  const [mes, setMes] = useState<FrequenciaDoMes | null>(null);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const nome = (usuario.nome ?? 'aluno').split(' ')[0];
@@ -48,12 +51,14 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
     void (async () => {
       const agora = new Date();
       try {
-        const [freq, pagamentos, proximas] = await Promise.all([
-          buscarFrequencia(usuario.id),
+        const [daSemana, doMes, pagamentos, proximas] = await Promise.all([
+          buscarFrequenciaDaSemana(supabase, usuario.id, agora),
+          buscarFrequenciaDoMes(supabase, usuario.id, chaveDoDia(agora)),
           buscarMensalidadesAbertas(usuario.id),
           buscarAulasDoAluno(supabase, agora, new Date(agora.getTime() + SETE_DIAS_EM_MS)),
         ]);
-        setFrequencia(freq);
+        setSemana(daSemana);
+        setMes(doMes);
         setMensalidades(pagamentos);
         setAulas(proximas.slice(0, AULAS_NA_INICIAL));
         setEstado('pronto');
@@ -81,8 +86,6 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
     );
   }
 
-  const abaixoDoMinimo = frequencia !== null && frequencia.percentual < FREQUENCIA_MINIMA;
-
   return (
     <main className={estilos.pagina}>
       <header className={estilos.cabecalho}>
@@ -94,31 +97,9 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
 
       <section className={estilos.bloco} aria-labelledby="freq">
         <h2 className={estilos.secao} id="freq">
-          Sua frequência este mês
+          Sua frequência
         </h2>
-        {frequencia === null ? (
-          <p className={estilos.vazio}>Você ainda não tem aulas neste mês.</p>
-        ) : (
-          <div className={estilos.cartao}>
-            <p
-              className={estilos.numeroGrande}
-              style={{ color: abaixoDoMinimo ? 'var(--warning)' : 'var(--primary-text)' }}
-            >
-              {frequencia.percentual.toFixed(0)}%
-            </p>
-            <p className={estilos.texto}>
-              {frequencia.presencas} de {frequencia.aulasContadas} aulas
-              {frequencia.justificadas > 0
-                ? ` · ${frequencia.justificadas} falta${frequencia.justificadas > 1 ? 's' : ''} justificada${frequencia.justificadas > 1 ? 's' : ''}`
-                : ''}
-            </p>
-            {abaixoDoMinimo ? (
-              <p className={estilos.alerta}>
-                Abaixo de {FREQUENCIA_MINIMA}%. Vale conversar com a academia.
-              </p>
-            ) : null}
-          </div>
-        )}
+        <CartaoDeFrequencia semana={semana} mes={mes} />
       </section>
 
       <section className={estilos.bloco} aria-labelledby="mens">
