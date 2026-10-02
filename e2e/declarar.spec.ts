@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { banco, criarAula, marcarExtra, type Conta } from './apoio/banco';
+import { banco, criarAula, marcarVou, type Conta } from './apoio/banco';
 import { avisoDaTela, entrar, expect, test } from './apoio/teste';
 
 // 6.2: declarar pela declarar_aula, com as ações da tabela da § 12.2.
@@ -113,7 +113,7 @@ test.describe('Declarar (6.2)', () => {
   }) => {
     const aluno = await novaConta({ termosAceitos: true });
     const deOutraTurma = await criarAula(mundo, 30, { daOutraTurma: true });
-    await marcarExtra(aluno.id, deOutraTurma.id);
+    await marcarVou(aluno.id, deOutraTurma.id);
 
     await abrirAulas(page, aluno);
     const item = page.getByRole('listitem').filter({ hasText: deOutraTurma.titulo });
