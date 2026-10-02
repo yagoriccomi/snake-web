@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { CartaoDeAula, SeloDaAula } from '@/components/CartaoDeAula';
+import { FormularioDeJustificativa } from '@/components/FormularioDeJustificativa';
 import { Protegida } from '@/components/Protegida';
 import {
   acoesDeDeclarar,
@@ -15,12 +16,8 @@ import {
   type AcaoDeDeclarar,
   type AulaDoAluno,
 } from '@/lib/aulas';
-import {
-  justificarFalta,
-  ROTULO_DA_JUSTIFICATIVA,
-  TAMANHO_MAXIMO_DA_JUSTIFICATIVA,
-} from '@/lib/dados';
-import { mensagemDaJustificativa, mensagemDoAviso } from '@/lib/erros';
+import { mensagemDoAviso } from '@/lib/erros';
+import { enviarJustificativa, SELO_DA_JUSTIFICATIVA } from '@/lib/justificativas';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -51,14 +48,13 @@ const UM_DIA_EM_MS = 24 * 60 * 60 * 1000;
  * chamada. A tela diz isso, para ninguém achar que avisar já conta.
  */
 export default function PaginaDeAulas(): React.JSX.Element {
-  return <Protegida etapa="aluno">{(usuario) => <Aulas userId={usuario.id} />}</Protegida>;
+  return <Protegida etapa="aluno">{() => <Aulas />}</Protegida>;
 }
 
-function Aulas({ userId }: { userId: string }): React.JSX.Element {
+function Aulas(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const [escrevendoPara, setEscrevendoPara] = useState<string | null>(null);
-  const [texto, setTexto] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
@@ -96,8 +92,11 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
         } else {
           setRecado(RECADO_DA_ACAO[acao.rotulo]);
         }
-        // Só o "Não vou" do fixo, na aula da grade, abre a justificativa.
-        if (acao.rotulo === 'Não vou') setEscrevendoPara(aula.id);
+        // Só o "Não vou" do fixo, na aula da grade, abre a justificativa, e só
+        // se o banco disser que ela ainda aceita (uma por aula, § 9.1).
+        if (acao.rotulo === 'Não vou' && aula.podeJustificar && aula.justificativa === null) {
+          setEscrevendoPara(aula.id);
+        }
         await carregar();
       } catch (falha) {
         setErro(mensagemDoAviso(falha));
@@ -124,23 +123,14 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
     }
   }, [cota, carregar]);
 
-  const enviarJustificativa = useCallback(
-    async (classId: string) => {
-      setErro(null);
-      setOcupado(true);
-      try {
-        await justificarFalta(classId, userId, texto);
-        setTexto('');
-        setEscrevendoPara(null);
-        setRecado('Justificativa enviada. A academia vai analisar.');
-        await carregar();
-      } catch (falha) {
-        setErro(mensagemDaJustificativa(falha));
-      } finally {
-        setOcupado(false);
-      }
+  const justificar = useCallback(
+    async (classId: string, texto: string) => {
+      await enviarJustificativa(supabase, { escopo: 'class', classId, texto });
+      setEscrevendoPara(null);
+      setRecado('Justificativa enviada. A academia vai analisar.');
+      await carregar();
     },
-    [userId, texto, carregar],
+    [carregar],
   );
 
   if (estado === 'carregando') {
@@ -168,6 +158,9 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
         <p className={estilos.texto}>
           Marcar é intenção: a presença vale pela chamada do professor.
         </p>
+        <a className={estilos.link} href="/justificativas">
+          Minhas justificativas →
+        </a>
       </header>
 
       {recado !== null ? (
@@ -203,45 +196,11 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
                   }
                 >
                   {escrevendoPara === aula.id ? (
-                    <div className={estilos.formulario}>
-                      <label className={estilos.rotulo} htmlFor={`motivo-${aula.id}`}>
-                        Motivo da falta (opcional)
-                      </label>
-                      <textarea
-                        id={`motivo-${aula.id}`}
-                        className={estilos.area}
-                        value={texto}
-                        onChange={(e) => setTexto(e.target.value)}
-                        maxLength={TAMANHO_MAXIMO_DA_JUSTIFICATIVA}
-                        rows={3}
-                        placeholder="Conte o motivo, se quiser que a falta seja analisada"
-                        disabled={ocupado}
-                      />
-                      <p className={estilos.contador}>
-                        {texto.length}/{TAMANHO_MAXIMO_DA_JUSTIFICATIVA}
-                      </p>
-                      <div className={estilos.acoes}>
-                        <button
-                          className={estilos.botao}
-                          type="button"
-                          onClick={() => void enviarJustificativa(aula.id)}
-                          disabled={ocupado || texto.trim() === ''}
-                        >
-                          {ocupado ? 'Enviando…' : 'Enviar justificativa'}
-                        </button>
-                        <button
-                          className={estilos.botaoSecundario}
-                          type="button"
-                          onClick={() => {
-                            setEscrevendoPara(null);
-                            setTexto('');
-                          }}
-                          disabled={ocupado}
-                        >
-                          Agora não
-                        </button>
-                      </div>
-                    </div>
+                    <FormularioDeJustificativa
+                      titulo="Justificar a falta"
+                      onEnviar={(texto) => justificar(aula.id, texto)}
+                      onFechar={() => setEscrevendoPara(null)}
+                    />
                   ) : null}
                 </CartaoDeAula>
               ))}
@@ -292,7 +251,7 @@ function AcoesDaAula({
       {estado !== null ? <SeloDaAula selo={estado} /> : null}
       {aula.justificativa !== null ? (
         <span className={estilos.selo} data-situacao={aula.justificativa}>
-          {ROTULO_DA_JUSTIFICATIVA[aula.justificativa]}
+          {SELO_DA_JUSTIFICATIVA[aula.justificativa]}
         </span>
       ) : null}
       {acoes.map((acao) => (

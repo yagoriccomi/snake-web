@@ -45,6 +45,18 @@ export interface SemanaDoMes {
   percentualDaSemana: number | null;
   esperadasNoMes: number;
   feitasNoMes: number;
+  /** Só livre: a semana ainda aceita justificativa (prazo e teto T17 do banco). */
+  podeJustificar: boolean;
+  justificarAte: string | null;
+  justificativasRestantes: number | null;
+  justificativas: JustificativaDaSemana[];
+}
+
+export interface JustificativaDaSemana {
+  id: string;
+  situacao: 'pending' | 'approved' | 'rejected';
+  tentativa: number;
+  aprovadaPor: string | null;
 }
 
 function numero(valor: unknown): number {
@@ -126,6 +138,17 @@ export async function buscarSemanasDoMes(
     percentualDaSemana: numeroOuNulo(linha.week_percent),
     esperadasNoMes: numero(linha.expected_in_month),
     feitasNoMes: numero(linha.attended_in_month),
+    podeJustificar: linha.can_justify === true,
+    justificarAte: texto(linha.justify_until),
+    justificativasRestantes: numeroOuNulo(linha.justifications_left),
+    justificativas: (Array.isArray(linha.justificativas) ? (linha.justificativas as Linha[]) : []).map(
+      (j) => ({
+        id: String(j.id),
+        situacao: j.status as JustificativaDaSemana['situacao'],
+        tentativa: numero(j.attempt),
+        aprovadaPor: texto(j.approved_by_name),
+      }),
+    ),
   }));
 }
 
@@ -200,4 +223,14 @@ export function avisoDeMesAberto(
   if (frequencia.fechado || frequencia.fechaEm === null) return null;
   if (chaveDoDia(hoje) <= ultimoDiaDoMes(mes)) return null;
   return `Fecha em ${diaEMesDaData(frequencia.fechaEm)}, quando a semana extra terminar`;
+}
+
+/** "resta 1 justificativa" / "restam 2 justificativas", como no app. */
+export function textoDasQueRestam(restam: number): string {
+  return restam === 1 ? 'resta 1 justificativa' : `restam ${restam} justificativas`;
+}
+
+/** As semanas que entram no bloco de justificativas: as que aceitam ou já têm alguma. */
+export function semanasParaJustificar(semanas: readonly SemanaDoMes[]): SemanaDoMes[] {
+  return semanas.filter((semana) => semana.podeJustificar || semana.justificativas.length > 0);
 }

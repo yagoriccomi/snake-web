@@ -153,3 +153,83 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.recado {
+  margin: 0;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.justificativas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.secao {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.semana {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.tituloDaSemana {
+  margin: 0;
+  font-weight: 600;
+}
+
+.estado {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Cor por situação, sempre com o texto escrito ao lado (nunca só a cor). */
+.estado[data-situacao='pending'] {
+  color: var(--warning);
+}
+
+.estado[data-situacao='approved'] {
+  color: var(--success);
+}
+
+.estado[data-situacao='rejected'] {
+  color: var(--error);
+}
+
+.acaoDaSemana {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dica {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.botaoLink {
+  min-height: var(--hit);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--primary-text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
