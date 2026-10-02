@@ -56,6 +56,8 @@ test.describe('Justificativas (6.6)', () => {
     await page.goto('/justificativas');
     const cartao = page.getByRole('listitem').filter({ hasText: aula.titulo });
     await expect(cartao.getByText(/^Justificativa negada · você pode reenviar até \d{2}\/\d{2}$/)).toBeVisible();
+    // Na 1ª negada ainda dá para reenviar: sem o bloco de contato (§ 5.4).
+    await expect(cartao.getByText('Para mais informações, fale com a academia:')).toHaveCount(0);
     await cartao.getByRole('button', { name: /^Reenviar até \d{2}\/\d{2}$/ }).click();
     await expect(cartao.getByText(/é a última tentativa\.$/)).toBeVisible();
     await cartao.getByLabel('Motivo da falta').fill('Segue o motivo com mais detalhe.');
@@ -72,5 +74,6 @@ test.describe('Justificativas (6.6)', () => {
       ),
     ).toBeVisible();
     await expect(cartao.getByRole('button', { name: /Reenviar/ })).toHaveCount(0);
+    await expect(cartao.getByText('Para mais informações, fale com a academia:')).toBeVisible();
   });
 });
