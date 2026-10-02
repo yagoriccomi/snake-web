@@ -47,23 +47,7 @@
   color: var(--text-secondary);
 }
 
-.cartao {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
 
-.numeroGrande {
-  margin: 0;
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
 
 .dia {
   display: flex;
@@ -149,12 +133,6 @@
   line-height: 1.5;
 }
 
-.alerta {
-  margin: 6px 0 0;
-  color: var(--warning);
-  font-size: 14px;
-  font-weight: 500;
-}
 
 .vazio {
   margin: 0;

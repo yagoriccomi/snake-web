@@ -1,0 +1,53 @@
+/* Cartão de frequência da linha F (versão 8). Só tokens de tema. */
+
+.cartao {
+  display: flex;
+  align-items: stretch;
+  min-height: 64px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.bloco {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bloco + .bloco {
+  border-left: 1px solid var(--border);
+}
+
+.rotulo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.valor {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.seta {
+  display: grid;
+  place-items: center;
+  padding: 0 12px;
+  font-size: 22px;
+  color: var(--text-secondary);
+}
+
+/* O nome do link para quem usa leitor de tela; visível, a seta basta. */
+.somenteLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

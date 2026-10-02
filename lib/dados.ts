@@ -12,37 +12,11 @@ import { supabase } from '@/lib/supabase';
  * precisar de conta, a conta é do banco: nenhuma regra de negócio nesta camada.
  */
 
-export interface Frequencia {
-  /** Aulas do mês que contam para a frequência. */
-  aulasContadas: number;
-  presencas: number;
-  justificadas: number;
-  percentual: number;
-}
-
 export interface Mensalidade {
   id: string;
   vencimento: string;
   valorCentavos: number;
   situacao: 'open' | 'overdue' | 'pending_approval' | 'paid';
-}
-
-/** Frequência do mês corrente. Mês sem aula nenhuma vale 100%. */
-export async function buscarFrequencia(userId: string): Promise<Frequencia | null> {
-  const { data, error } = await supabase.rpc('frequencia_mensal', { p_user_ids: [userId] });
-  if (error !== null) {
-    throw error;
-  }
-  const linha = (data as Array<Record<string, unknown>> | null)?.[0];
-  if (linha === undefined) {
-    return null;
-  }
-  return {
-    aulasContadas: Number(linha.counted_classes ?? 0),
-    presencas: Number(linha.attended ?? 0),
-    justificadas: Number(linha.justified ?? 0),
-    percentual: Number(linha.frequency_percent ?? 0),
-  };
 }
 
 /** Mensalidades em aberto, vencidas ou em análise — as que pedem ação. */
