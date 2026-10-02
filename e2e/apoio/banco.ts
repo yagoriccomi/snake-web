@@ -322,6 +322,10 @@ export async function apagarConta(id: string): Promise<void> {
   const db = banco();
   const faturas = await db.from('payments').select('id').eq('user_id', id);
   const idsDasFaturas = (faturas.data ?? []).map((fatura) => String(fatura.id));
+  // O motivo sem aula (justificativa da troca permanente) não cai com nada:
+  // o autor vira nulo quando a conta sai. Os ids são guardados antes.
+  const motivos = await db.from('action_reasons').select('id').eq('author_id', id);
+  const idsDosMotivos = (motivos.data ?? []).map((motivo) => String(motivo.id));
   const arquivos = await db.storage.from(BUCKET_DE_COMPROVANTES).list(id);
   const nomes = (arquivos.data ?? []).map((arquivo) => `${id}/${arquivo.name}`);
   if (nomes.length > 0) {
@@ -330,6 +334,10 @@ export async function apagarConta(id: string): Promise<void> {
   const apagado = await db.auth.admin.deleteUser(id);
   if (apagado.error !== null && !/not found/i.test(apagado.error.message)) {
     throw new Error(`E2E: apagar a conta falhou: ${apagado.error.message}`);
+  }
+  if (idsDosMotivos.length > 0) {
+    const { error } = await db.from('action_reasons').delete().in('id', idsDosMotivos);
+    if (error !== null) throw new Error(`E2E: apagar os motivos falhou: ${error.message}`);
   }
   await apagarRastro([id, ...idsDasFaturas]);
 }
@@ -351,6 +359,41 @@ export interface OpcoesDeAula {
   quando?: Date;
   /** Chamada já concluída (para o "Eu estava na aula"). */
   chamadaFeita?: boolean;
+  /** Vem de um horário da grade semanal (para a troca permanente). */
+  recorrente?: boolean;
+}
+
+const FUSO = 'America/Sao_Paulo';
+
+/** Data (`AAAA-MM-DD`), hora (`HH:MM`) e dia da semana (0 = domingo) em São Paulo. */
+function partesEmSaoPaulo(instante: Date): { data: string; hora: string; diaDaSemana: number } {
+  const data = new Intl.DateTimeFormat('en-CA', { timeZone: FUSO, year: 'numeric', month: '2-digit', day: '2-digit' }).format(instante);
+  const hora = new Intl.DateTimeFormat('en-GB', { timeZone: FUSO, hour: '2-digit', minute: '2-digit', hour12: false }).format(instante);
+  return { data, hora, diaDaSemana: new Date(`${data}T12:00:00Z`).getUTCDay() };
+}
+
+/** Um horário da grade semanal na turma, no dia e na hora da aula, valendo desde um mês antes. */
+async function criarHorario(mundo: Mundo, turmaId: string, quando: Date, titulo: string): Promise<string> {
+  const { data, hora, diaDaSemana } = partesEmSaoPaulo(quando);
+  const desde = new Date(Date.parse(`${data}T12:00:00Z`) - DIAS_NA_ACADEMIA * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const horario = exigir(
+    await banco()
+      .from('class_schedules')
+      .insert({
+        group_id: turmaId,
+        title: titulo,
+        weekday: diaDaSemana,
+        start_time: hora,
+        valid_from: desde,
+        audience: 'both',
+      })
+      .select('id')
+      .single(),
+    `criar o horário (${mundo.rodada})`,
+  );
+  return String(horario.id);
 }
 
 /** Aula de rotina da turma da rodada, daqui a alguns minutos. */
@@ -360,14 +403,24 @@ export async function criarAula(
   opcoes: OpcoesDeAula = {},
 ): Promise<AulaSintetica> {
   const titulo = `Aula E2E ${mundo.rodada}-${sufixo()}`;
+  const quando = opcoes.quando ?? new Date(Date.now() + minutosAFrente * 60_000);
+  const turmaId = opcoes.daOutraTurma === true ? mundo.outraTurmaId : mundo.turmaId;
+  const horario =
+    opcoes.recorrente === true
+      ? {
+          schedule_id: await criarHorario(mundo, turmaId, quando, titulo),
+          occurrence_date: partesEmSaoPaulo(quando).data,
+        }
+      : {};
   const aula = exigir(
     await banco()
       .from('classes')
       .insert({
+        ...horario,
         title: titulo,
         type: 'routine',
-        date_time: (opcoes.quando ?? new Date(Date.now() + minutosAFrente * 60_000)).toISOString(),
-        group_id: opcoes.daOutraTurma === true ? mundo.outraTurmaId : mundo.turmaId,
+        date_time: quando.toISOString(),
+        group_id: turmaId,
         audience: 'both',
         cancelled_at: opcoes.cancelada === true ? new Date().toISOString() : null,
         attendance_taken_at: opcoes.chamadaFeita === true ? new Date().toISOString() : null,
@@ -471,6 +524,7 @@ export async function apagarTudoDoE2E(): Promise<void> {
 
   const passos: [string, () => PromiseLike<{ error: { message: string } | null }>][] = [
     ['as aulas', () => db.from('classes').delete().like('group_id', `${PREFIXO}%`)],
+    ['os horários', () => db.from('class_schedules').delete().like('group_id', `${PREFIXO}%`)],
     ['as turmas', () => db.from('groups').delete().like('id', `${PREFIXO}%`)],
     ['os planos', () => db.from('plans').delete().like('name', `${PREFIXO_DO_PLANO}%`)],
     ['os documentos', () => db.from('legal_documents').delete().like('version', `${PREFIXO}%`)],
