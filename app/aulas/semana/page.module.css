@@ -1,0 +1,141 @@
+.pagina {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hit);
+}
+
+.titulo {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.texto {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Abas Esta semana / Próxima semana, como o controle segmentado dos mockups. */
+.abas {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.aba {
+  flex: 1;
+  min-height: var(--hit);
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aba[aria-selected='true'] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* Os dias de aula: seis colunas no celular, rolagem lateral se houver mais. */
+.dias {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(52px, 1fr);
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.diaDoMenu {
+  min-height: 64px;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.diaDoMenu small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.diaDoMenu b {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+
+.diaDoMenu i {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+/* Dia que já passou: borda tracejada, como nos mockups; a aula dele continua lá. */
+.diaDoMenu[data-passado='true'] {
+  border-style: dashed;
+}
+
+.diaDoMenu[aria-selected='true'] {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vazio {
+  margin: 0;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.falha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.botaoSecundario {
+  min-height: var(--hit);
+  padding: 0 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
