@@ -21,6 +21,7 @@ const COR_DO_PROFESSOR = '#FF6B35';
 const CELULAR_SINTETICO = '11900000000';
 const VARIAVEL_DO_MUNDO = 'E2E_MUNDO';
 const TIPOS_DE_DOCUMENTO = ['terms_of_use', 'privacy_policy'] as const;
+const DIAS_NA_ACADEMIA = 30;
 
 export const TEXTO_DO_DOCUMENTO =
   'Documento sintético do teste automatizado. Não vale como Política nem como Termos.';
@@ -29,6 +30,8 @@ export const TEXTO_DO_DOCUMENTO =
 export interface Mundo {
   rodada: string;
   planoId: string;
+  /** Plano de horário livre com cota de 1x por semana: a segunda marcada já passa da cota. */
+  planoLivreId: string;
   turmaId: string;
   /** Turma de que as contas sintéticas não fazem parte. */
   outraTurmaId: string;
@@ -50,6 +53,8 @@ export interface OpcoesDeConta {
   semApp?: boolean;
   /** Já aceitou os documentos vigentes. */
   termosAceitos?: boolean;
+  /** Horário livre (cota 1x); sem isto, horário fixo. */
+  livre?: boolean;
 }
 
 let cliente: SupabaseClient | null = null;
@@ -124,6 +129,24 @@ export async function criarMundo(): Promise<Mundo> {
     'criar o plano',
   );
 
+  const planoLivre = exigir(
+    await db
+      .from('plans')
+      .insert({
+        name: `${PREFIXO_DO_PLANO}livre ${rodada}`,
+        description: 'Plano sintético do E2E, horário livre.',
+        price_cents: 10000,
+        billing_period: 'monthly',
+        due_day: 10,
+        is_active: true,
+        schedule_mode: 'free',
+        weekly_quota: 1,
+      })
+      .select('id')
+      .single(),
+    'criar o plano livre',
+  );
+
   const turmaId = `${PREFIXO}${rodada}`;
   const outraTurmaId = `${PREFIXO}${rodada}-outra`;
   exigir(
@@ -161,7 +184,13 @@ export async function criarMundo(): Promise<Mundo> {
     );
   }
 
-  return { rodada, planoId: String(plano.id), turmaId, outraTurmaId };
+  return {
+    rodada,
+    planoId: String(plano.id),
+    planoLivreId: String(planoLivre.id),
+    turmaId,
+    outraTurmaId,
+  };
 }
 
 export function guardarMundo(mundo: Mundo): void {
@@ -209,7 +238,7 @@ export async function criarConta(mundo: Mundo, opcoes: OpcoesDeConta = {}): Prom
           is_first_login: primeiroAcesso,
           status: 'active',
           group_id: mundo.turmaId,
-          plan_id: mundo.planoId,
+          plan_id: opcoes.livre === true ? mundo.planoLivreId : mundo.planoId,
           access_channel: opcoes.semApp === true ? 'none' : 'app',
         };
   const gravado = await db.from('profiles').insert(perfil);
@@ -217,6 +246,8 @@ export async function criarConta(mundo: Mundo, opcoes: OpcoesDeConta = {}): Prom
     await db.auth.admin.deleteUser(id);
     throw new Error(`E2E: criar o perfil falhou: ${gravado.error.message}`);
   }
+
+  if (papel === 'user') await antigoNaAcademia(id);
 
   if (opcoes.termosAceitos === true) {
     const vigentes = exigir(
@@ -241,6 +272,21 @@ async function apagarRastro(ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
   const { error } = await banco().from('audit_log').delete().in('entity_id', ids);
   if (error !== null) throw new Error(`E2E: apagar o rastro falhou: ${error.message}`);
+}
+
+/**
+ * O banco conta a turma e o plano a partir do cadastro: a cota da semana é
+ * proporcional aos dias em que o plano vale (`cota_da_semana`), e as aulas da
+ * turma anteriores à entrada não são dele (D58). A conta sintética nasce como
+ * quem já estava na academia, para o teste não depender do dia da semana.
+ */
+async function antigoNaAcademia(userId: string): Promise<void> {
+  const db = banco();
+  const desde = new Date(Date.now() - DIAS_NA_ACADEMIA * 24 * 60 * 60 * 1000).toISOString();
+  for (const tabela of ['plan_periods', 'student_group_periods']) {
+    const { error } = await db.from(tabela).update({ started_at: desde }).eq('user_id', userId);
+    if (error !== null) throw new Error(`E2E: recuar ${tabela} falhou: ${error.message}`);
+  }
 }
 
 /** Apaga a conta; o resto (perfil, presença, faturas, aceites…) vai em cascata. */
@@ -273,6 +319,8 @@ export interface OpcoesDeAula {
   /** Aula da outra turma, que não é das contas sintéticas. */
   daOutraTurma?: boolean;
   cancelada?: boolean;
+  /** Horário exato, para duas aulas no mesmo minuto. */
+  quando?: Date;
 }
 
 /** Aula de rotina da turma da rodada, daqui a alguns minutos. */
@@ -288,7 +336,7 @@ export async function criarAula(
       .insert({
         title: titulo,
         type: 'routine',
-        date_time: new Date(Date.now() + minutosAFrente * 60_000).toISOString(),
+        date_time: (opcoes.quando ?? new Date(Date.now() + minutosAFrente * 60_000)).toISOString(),
         group_id: opcoes.daOutraTurma === true ? mundo.outraTurmaId : mundo.turmaId,
         audience: 'both',
         cancelled_at: opcoes.cancelada === true ? new Date().toISOString() : null,
@@ -364,4 +412,15 @@ export async function apagarTudoDoE2E(): Promise<void> {
     if (error !== null) throw new Error(`E2E: apagar ${nome} falhou: ${error.message}`);
   }
   await apagarRastro(idsDosPlanos);
+}
+
+/**
+ * Extra já marcada pelo fixo, gravada direto como sistema. É o estado que o
+ * "Vou (extra)" do menu (6.12) deixa; aqui só serve para testar o Desmarcar.
+ */
+export async function marcarExtra(userId: string, classId: string): Promise<void> {
+  const { error } = await banco()
+    .from('attendance')
+    .insert({ class_id: classId, user_id: userId, declared_status: 'present' });
+  if (error !== null) throw new Error(`E2E: marcar a extra falhou: ${error.message}`);
 }

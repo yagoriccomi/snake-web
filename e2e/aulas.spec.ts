@@ -59,6 +59,10 @@ test.describe('/aulas', () => {
     await item.getByRole('button', { name: 'Vou', exact: true }).click();
 
     await expect(page.getByRole('status')).toHaveText('Avisamos que você vem.');
+    await expect(item.getByRole('button', { name: 'Vou', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     const presenca = await banco()
       .from('attendance')
       .select('declared_status, status')
