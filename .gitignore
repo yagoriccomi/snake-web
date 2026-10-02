@@ -42,3 +42,9 @@ next-env.d.ts
 
 # O exemplo entra no Git (sem valores); os .env reais, nunca.
 !.env.example
+
+# e2e (Playwright)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
