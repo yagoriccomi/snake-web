@@ -62,6 +62,16 @@ export interface AulaDoAluno {
   origem: string | null;
   /** Fixo: pode marcar "Vou (extra)" agora (§ 9.5). */
   podeMarcarExtra: boolean;
+  /** Fixo: pode ser a aula original de uma troca só nesta semana (§ 9.4). */
+  podeTrocarDe: boolean;
+  /** Fixo: pode ser a aula original de uma troca permanente. */
+  podeTrocarDePermanente: boolean;
+  /** Fixo: pode ser a aula nova de uma troca (os dois tipos). */
+  podeTrocarPara: boolean;
+  /** Veio da grade semanal: pode ser destino de troca permanente. */
+  recorrente: boolean;
+  /** `AAAA-MM-DD`: último dia do horário, quando ele tem fim. */
+  horarioTerminaEm: string | null;
   troca: Troca | null;
 }
 
@@ -125,6 +135,11 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     professores: professores(linha.teachers),
     origem: texto(linha.origem),
     podeMarcarExtra: linha.can_mark_extra === true,
+    podeTrocarDe: linha.can_swap_from === true,
+    podeTrocarDePermanente: linha.can_swap_from_permanent === true,
+    podeTrocarPara: linha.can_swap_to === true,
+    recorrente: linha.is_recurring === true,
+    horarioTerminaEm: texto(linha.schedule_ends_on),
     troca: troca(linha),
   };
 }

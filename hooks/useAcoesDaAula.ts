@@ -6,6 +6,7 @@ import { avisoDeCota, declararAula, type AcaoDeDeclarar, type AulaDoAluno } from
 import { mensagemDoAviso } from '@/lib/erros';
 import { enviarJustificativa } from '@/lib/justificativas';
 import { PEDIDO_ENVIADO, pedirEuEstavaNaAula } from '@/lib/solicitacoes';
+import { pedirTroca as pedirAoBanco, TEXTOS_DA_TROCA, type PedidoDeTroca } from '@/lib/trocas';
 import { supabase } from '@/lib/supabase';
 
 /** O aviso de acima da cota guarda a aula, para o "Desfazer" saber o que desmarcar. */
@@ -32,11 +33,15 @@ export interface AcoesDaAula {
   justificandoAula: string | null;
   /** A aula com o formulário do "Eu estava na aula" aberto. */
   contestandoAula: string | null;
+  /** A aula nova com a folha "Trocar aula" aberta. */
+  trocandoAula: string | null;
   declarar: (aula: AulaDoAluno, acao: AcaoDeDeclarar) => Promise<void>;
   desfazerAcimaDaCota: () => Promise<void>;
   justificar: (classId: string, texto: string) => Promise<void>;
   contestar: (classId: string, texto: string) => Promise<void>;
   abrirContestacao: (classId: string) => void;
+  abrirTroca: (classId: string) => void;
+  pedirTroca: (pedido: PedidoDeTroca) => Promise<void>;
   fecharFormularios: () => void;
 }
 
@@ -53,6 +58,7 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
   const [cota, setCota] = useState<AvisoDeCota | null>(null);
   const [justificandoAula, setJustificandoAula] = useState<string | null>(null);
   const [contestandoAula, setContestandoAula] = useState<string | null>(null);
+  const [trocandoAula, setTrocandoAula] = useState<string | null>(null);
 
   const declarar = useCallback(
     async (aula: AulaDoAluno, acao: AcaoDeDeclarar) => {
@@ -122,12 +128,30 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
 
   const abrirContestacao = useCallback((classId: string) => {
     setRecado(null);
+    setTrocandoAula(null);
     setContestandoAula(classId);
   }, []);
+
+  const abrirTroca = useCallback((classId: string) => {
+    setRecado(null);
+    setContestandoAula(null);
+    setTrocandoAula(classId);
+  }, []);
+
+  const pedirTroca = useCallback(
+    async (pedido: PedidoDeTroca) => {
+      await pedirAoBanco(supabase, pedido);
+      setTrocandoAula(null);
+      setRecado(TEXTOS_DA_TROCA.pedida);
+      await recarregar();
+    },
+    [recarregar],
+  );
 
   const fecharFormularios = useCallback(() => {
     setJustificandoAula(null);
     setContestandoAula(null);
+    setTrocandoAula(null);
   }, []);
 
   return {
@@ -137,11 +161,14 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
     cota,
     justificandoAula,
     contestandoAula,
+    trocandoAula,
     declarar,
     desfazerAcimaDaCota,
     justificar,
     contestar,
     abrirContestacao,
+    abrirTroca,
+    pedirTroca,
     fecharFormularios,
   };
 }
