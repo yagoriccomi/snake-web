@@ -134,12 +134,6 @@
   padding: 16px;
 }
 
-.rodapeNota {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-align: center;
-}
 
 /* Telas de aviso: carregando, sem permissão, erro. */
 .aviso {

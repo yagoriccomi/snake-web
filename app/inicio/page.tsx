@@ -216,9 +216,6 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
         )}
       </section>
 
-      <p className={estilos.rodapeNota}>
-        Enviar comprovante e justificar falta entram aqui em seguida.
-      </p>
     </main>
   );
 }
