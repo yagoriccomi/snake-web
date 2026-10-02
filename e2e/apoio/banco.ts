@@ -506,3 +506,16 @@ export async function negarJustificativa(userId: string, classId: string): Promi
     .eq('class_id', classId);
   if (error !== null) throw new Error(`E2E: negar a justificativa falhou: ${error.message}`);
 }
+
+/** A chamada do aluno numa aula já feita, gravada como sistema (é o que o professor faz no app). */
+export async function registrarChamada(
+  userId: string,
+  classId: string,
+  presenca: 'present' | 'absent',
+  editada = false,
+): Promise<void> {
+  const { error } = await banco()
+    .from('attendance')
+    .insert({ class_id: classId, user_id: userId, status: presenca, edited: editada });
+  if (error !== null) throw new Error(`E2E: registrar a chamada falhou: ${error.message}`);
+}

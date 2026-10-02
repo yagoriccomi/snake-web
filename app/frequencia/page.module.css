@@ -233,3 +233,75 @@
   font-size: 14px;
   cursor: pointer;
 }
+
+.historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linhaDoHistorico {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.quando {
+  width: 92px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.corpoDoHistorico {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tituloDaAula {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Selo de contorno, como os do cartão de aula; "Editada" e o atraso são avisos. */
+.marca {
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: var(--warning);
+}
+
+.situacao {
+  flex-shrink: 0;
+  max-width: 40%;
+  text-align: right;
+  font-weight: 600;
+}
+
+.situacao[data-tom='presente'] {
+  color: var(--success);
+}
+
+.situacao[data-tom='falta'] {
+  color: var(--error);
+}
+
+.situacao[data-tom='neutro'] {
+  color: var(--text-secondary);
+}
