@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import type { AulaDoAluno } from '@/lib/aulas';
+import { formatarDiaEHora, type AulaDoAluno } from '@/lib/aulas';
 import { ErroDeValidacao } from '@/lib/erros';
 
 /**
@@ -27,6 +27,8 @@ export const TEXTOS_DA_TROCA = {
     'A troca permanente muda a sua grade a partir da próxima aula depois da aprovação.',
   semOpcao: 'Nenhuma aula sua nesta semana pode ser trocada por esta.',
   pedida: 'Pedido de troca enviado. A aula nova fica como Troca pendente até a decisão.',
+  desistiu: 'Você desistiu da troca.',
+  confirmarDesistencia: 'Você volta a ter a aula original, e a troca não pode ser retomada.',
 } as const;
 
 /** Limite do banco para a justificativa da permanente (`action_reasons.body`). */
@@ -106,4 +108,82 @@ export async function pedirTroca(cliente: SupabaseClient, pedido: PedidoDeTroca)
     throw error;
   }
   return String(data);
+}
+
+/** Desfaz a troca pendente, ou a avulsa aprovada antes das duas aulas (T36). */
+export async function desistirDaTroca(cliente: SupabaseClient, id: string): Promise<void> {
+  const { error } = await cliente.rpc('desistir_da_troca', { p_id: id });
+  if (error !== null) {
+    throw error;
+  }
+}
+
+export type SituacaoDaTroca = 'pending' | 'approved' | 'rejected' | 'expired' | 'cancelled';
+
+export interface MinhaTroca {
+  id: string;
+  tipo: TipoDeTroca;
+  situacao: SituacaoDaTroca;
+  decididaPor: string | null;
+  tituloDe: string | null;
+  quandoDe: string | null;
+  tituloPara: string | null;
+  quandoPara: string | null;
+  reposicao: boolean;
+  /** Só na permanente: o texto que ele mesmo escreveu. */
+  motivo: string | null;
+  /** Só quando aprovada (D16); nulo quando quem decidiu foi o sistema (T50). */
+  aprovadaPor: string | null;
+  podeDesistir: boolean;
+}
+
+function textoOuNulo(valor: unknown): string | null {
+  return typeof valor === 'string' ? valor : null;
+}
+
+/** Últimos 60 dias e as futuras (os padrões de `minhas_trocas`). */
+export async function buscarMinhasTrocas(cliente: SupabaseClient): Promise<MinhaTroca[]> {
+  const { data, error } = await cliente.rpc('minhas_trocas');
+  if (error !== null) {
+    throw error;
+  }
+  return ((data ?? []) as Record<string, unknown>[]).map((linha) => ({
+    id: String(linha.id),
+    tipo: linha.kind === 'permanent' ? 'permanent' : 'once',
+    situacao: linha.status as SituacaoDaTroca,
+    decididaPor: textoOuNulo(linha.decided_via),
+    tituloDe: textoOuNulo(linha.from_title),
+    quandoDe: textoOuNulo(linha.from_date_time),
+    tituloPara: textoOuNulo(linha.to_title),
+    quandoPara: textoOuNulo(linha.to_date_time),
+    reposicao: linha.is_makeup === true,
+    motivo: textoOuNulo(linha.motivo_texto),
+    aprovadaPor: textoOuNulo(linha.approved_by_name),
+    podeDesistir: linha.can_cancel === true,
+  }));
+}
+
+/** O rótulo do acompanhamento (§ 3). Quem negou nunca aparece (D16). */
+export function rotuloDaTroca(
+  troca: Pick<MinhaTroca, 'situacao' | 'decididaPor' | 'aprovadaPor'>,
+): string {
+  switch (troca.situacao) {
+    case 'pending':
+      return 'Troca pendente';
+    case 'approved':
+      if (troca.decididaPor === 'system') return 'Troca abonada: a aula nova foi cancelada';
+      return troca.aprovadaPor !== null ? `Troca aprovada por ${troca.aprovadaPor}` : 'Troca aprovada';
+    case 'rejected':
+      return 'Troca negada';
+    case 'expired':
+      return 'Troca expirada · vale a aula original';
+    case 'cancelled':
+      return troca.decididaPor === 'student' ? 'Você desistiu da troca' : 'Troca cancelada';
+  }
+}
+
+/** "Muay Thai · seg 06/10 19:00", ou "Aula removida" quando a aula foi apagada. */
+export function descricaoDaAulaDaTroca(titulo: string | null, quando: string | null): string {
+  if (titulo === null || quando === null) return 'Aula removida';
+  return `${titulo} · ${formatarDiaEHora(quando)}`;
 }

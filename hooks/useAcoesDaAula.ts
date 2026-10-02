@@ -6,7 +6,12 @@ import { avisoDeCota, declararAula, type AcaoDeDeclarar, type AulaDoAluno } from
 import { mensagemDoAviso } from '@/lib/erros';
 import { enviarJustificativa } from '@/lib/justificativas';
 import { PEDIDO_ENVIADO, pedirEuEstavaNaAula } from '@/lib/solicitacoes';
-import { pedirTroca as pedirAoBanco, TEXTOS_DA_TROCA, type PedidoDeTroca } from '@/lib/trocas';
+import {
+  desistirDaTroca,
+  pedirTroca as pedirAoBanco,
+  TEXTOS_DA_TROCA,
+  type PedidoDeTroca,
+} from '@/lib/trocas';
 import { supabase } from '@/lib/supabase';
 
 /** O aviso de acima da cota guarda a aula, para o "Desfazer" saber o que desmarcar. */
@@ -35,6 +40,8 @@ export interface AcoesDaAula {
   contestandoAula: string | null;
   /** A aula nova com a folha "Trocar aula" aberta. */
   trocandoAula: string | null;
+  /** A aula com a confirmação do "Desistir da troca" aberta. */
+  desistindoAula: string | null;
   declarar: (aula: AulaDoAluno, acao: AcaoDeDeclarar) => Promise<void>;
   desfazerAcimaDaCota: () => Promise<void>;
   justificar: (classId: string, texto: string) => Promise<void>;
@@ -42,6 +49,8 @@ export interface AcoesDaAula {
   abrirContestacao: (classId: string) => void;
   abrirTroca: (classId: string) => void;
   pedirTroca: (pedido: PedidoDeTroca) => Promise<void>;
+  abrirDesistencia: (classId: string) => void;
+  desistir: (trocaId: string) => Promise<void>;
   fecharFormularios: () => void;
 }
 
@@ -59,6 +68,7 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
   const [justificandoAula, setJustificandoAula] = useState<string | null>(null);
   const [contestandoAula, setContestandoAula] = useState<string | null>(null);
   const [trocandoAula, setTrocandoAula] = useState<string | null>(null);
+  const [desistindoAula, setDesistindoAula] = useState<string | null>(null);
 
   const declarar = useCallback(
     async (aula: AulaDoAluno, acao: AcaoDeDeclarar) => {
@@ -148,10 +158,28 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
     [recarregar],
   );
 
+  const abrirDesistencia = useCallback((classId: string) => {
+    setRecado(null);
+    setContestandoAula(null);
+    setTrocandoAula(null);
+    setDesistindoAula(classId);
+  }, []);
+
+  const desistir = useCallback(
+    async (trocaId: string) => {
+      await desistirDaTroca(supabase, trocaId);
+      setDesistindoAula(null);
+      setRecado(TEXTOS_DA_TROCA.desistiu);
+      await recarregar();
+    },
+    [recarregar],
+  );
+
   const fecharFormularios = useCallback(() => {
     setJustificandoAula(null);
     setContestandoAula(null);
     setTrocandoAula(null);
+    setDesistindoAula(null);
   }, []);
 
   return {
@@ -162,6 +190,7 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
     justificandoAula,
     contestandoAula,
     trocandoAula,
+    desistindoAula,
     declarar,
     desfazerAcimaDaCota,
     justificar,
@@ -169,6 +198,8 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
     abrirContestacao,
     abrirTroca,
     pedirTroca,
+    abrirDesistencia,
+    desistir,
     fecharFormularios,
   };
 }

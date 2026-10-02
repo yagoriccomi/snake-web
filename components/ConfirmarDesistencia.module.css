@@ -1,0 +1,61 @@
+/* Confirmação de "Desistir da troca". Só tokens de tema. */
+
+.confirmacao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.texto {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+.acoes {
+  display: flex;
+  gap: 12px;
+}
+
+.secundario,
+.perigo {
+  flex: 1;
+  min-height: var(--hit);
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* Não tem volta: o botão diz isso pela cor de erro, e o texto acima explica. */
+.perigo {
+  border: 1px solid var(--error);
+  background: transparent;
+  color: var(--error);
+}
+
+.secundario:disabled,
+.perigo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -53,8 +53,8 @@ test.describe('Aulas da semana (6.12)', () => {
     await entrar(page, aluno);
     await expect(page).toHaveURL('/inicio');
     await page.goto('/aulas/semana');
-    await expect(page.getByText(daProxima.titulo)).toHaveCount(0);
-
+    // Troca de aba com a primeira leitura ainda no ar, de propósito: a resposta
+    // atrasada de "Esta semana" não pode tomar o lugar da próxima.
     await page.getByRole('tab', { name: 'Próxima semana' }).click();
     await page.getByRole('tab', { name: new RegExp(`^\\S+ ${diaEmSaoPaulo(quando)},`) }).click();
 
