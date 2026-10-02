@@ -30,6 +30,8 @@ export interface Mundo {
   rodada: string;
   planoId: string;
   turmaId: string;
+  /** Turma de que as contas sintéticas não fazem parte. */
+  outraTurmaId: string;
 }
 
 export interface Conta {
@@ -123,9 +125,16 @@ export async function criarMundo(): Promise<Mundo> {
   );
 
   const turmaId = `${PREFIXO}${rodada}`;
+  const outraTurmaId = `${PREFIXO}${rodada}-outra`;
   exigir(
-    await db.from('groups').insert({ id: turmaId, name: `Turma E2E ${rodada}` }).select('id').single(),
-    'criar a turma',
+    await db
+      .from('groups')
+      .insert([
+        { id: turmaId, name: `Turma E2E ${rodada}` },
+        { id: outraTurmaId, name: `Outra turma E2E ${rodada}` },
+      ])
+      .select('id'),
+    'criar as turmas',
   );
 
   // Documento vigente é de todo o banco. Só cria quando não há nenhum, para
@@ -152,7 +161,7 @@ export async function criarMundo(): Promise<Mundo> {
     );
   }
 
-  return { rodada, planoId: String(plano.id), turmaId };
+  return { rodada, planoId: String(plano.id), turmaId, outraTurmaId };
 }
 
 export function guardarMundo(mundo: Mundo): void {
@@ -260,8 +269,18 @@ export interface AulaSintetica {
   titulo: string;
 }
 
+export interface OpcoesDeAula {
+  /** Aula da outra turma, que não é das contas sintéticas. */
+  daOutraTurma?: boolean;
+  cancelada?: boolean;
+}
+
 /** Aula de rotina da turma da rodada, daqui a alguns minutos. */
-export async function criarAula(mundo: Mundo, minutosAFrente: number): Promise<AulaSintetica> {
+export async function criarAula(
+  mundo: Mundo,
+  minutosAFrente: number,
+  opcoes: OpcoesDeAula = {},
+): Promise<AulaSintetica> {
   const titulo = `Aula E2E ${mundo.rodada}-${sufixo()}`;
   const aula = exigir(
     await banco()
@@ -270,8 +289,9 @@ export async function criarAula(mundo: Mundo, minutosAFrente: number): Promise<A
         title: titulo,
         type: 'routine',
         date_time: new Date(Date.now() + minutosAFrente * 60_000).toISOString(),
-        group_id: mundo.turmaId,
+        group_id: opcoes.daOutraTurma === true ? mundo.outraTurmaId : mundo.turmaId,
         audience: 'both',
+        cancelled_at: opcoes.cancelada === true ? new Date().toISOString() : null,
       })
       .select('id')
       .single(),
