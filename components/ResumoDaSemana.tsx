@@ -7,14 +7,17 @@ import estilos from './ResumoDaSemana.module.css';
  * à vontade, a meta. O fixo não tem este cartão. Os números são os das
  * colunas de `aulas_do_aluno`, contados como o app conta.
  *
- * `acao` fica ao lado do título (o "Mudar" da meta, no 6.5).
+ * `acao` fica ao lado do título (o "Mudar" da meta); `children`, embaixo (a
+ * folha da meta, quando aberta).
  */
 export function ResumoDaSemana({
   resumo,
   acao,
+  children,
 }: {
   resumo: Resumo;
   acao?: React.ReactNode;
+  children?: React.ReactNode;
 }): React.JSX.Element | null {
   if (resumo.meta === null || resumo.modalidade === 'fixed' || resumo.modalidade === null) {
     return null;
@@ -30,6 +33,7 @@ export function ResumoDaSemana({
         <p className={estilos.detalhe}>
           {`${contagem(resumo.feitas, 'feita', 'feitas')} nesta semana. Faltas não precisam de justificativa: só contam na sua meta.`}
         </p>
+        {children}
       </div>
     );
   }

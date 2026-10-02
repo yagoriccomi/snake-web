@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CartaoDeAula } from '@/components/CartaoDeAula';
 import { CartaoDeFrequencia } from '@/components/CartaoDeFrequencia';
+import { FolhaDaMeta } from '@/components/FolhaDaMeta';
 import { Protegida, type UsuarioLiberado } from '@/components/Protegida';
 import { ResumoDaSemana } from '@/components/ResumoDaSemana';
 import {
@@ -22,6 +23,7 @@ import {
   ROTULO_DA_SITUACAO,
   type Mensalidade,
 } from '@/lib/dados';
+import { buscarMetaDaSemana, proximaSegunda, textoDaMudanca } from '@/lib/meta';
 import {
   buscarFrequenciaDaSemana,
   buscarFrequenciaDoMes,
@@ -49,6 +51,10 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const [resumo, setResumo] = useState<Resumo | null>(null);
+  // Meta da próxima semana, lida ao abrir a folha; nula com a folha fechada.
+  const [metaDaProxima, setMetaDaProxima] = useState<number | null>(null);
+  const [recadoDaMeta, setRecadoDaMeta] = useState<string | null>(null);
+  const [erroDaMeta, setErroDaMeta] = useState<string | null>(null);
   const nome = (usuario.nome ?? 'aluno').split(' ')[0];
 
   const sair = useCallback(() => {
@@ -80,6 +86,16 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
       }
     })();
   }, [usuario.id]);
+
+  const abrirMeta = async (): Promise<void> => {
+    setRecadoDaMeta(null);
+    setErroDaMeta(null);
+    try {
+      setMetaDaProxima(await buscarMetaDaSemana(supabase, usuario.id, proximaSegunda(new Date())));
+    } catch {
+      setErroDaMeta('Não foi possível abrir a meta. Verifique a conexão e tente de novo.');
+    }
+  };
 
   if (estado === 'carregando') {
     return <main className={estilos.aviso} role="status">Carregando…</main>;
@@ -113,7 +129,40 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
           Sua frequência
         </h2>
         <CartaoDeFrequencia semana={semana} mes={mes} />
-        {resumo !== null ? <ResumoDaSemana resumo={resumo} /> : null}
+        {resumo !== null ? (
+          <ResumoDaSemana
+            resumo={resumo}
+            acao={
+              resumo.modalidade === 'unlimited' && metaDaProxima === null ? (
+                <button className={estilos.mudar} type="button" onClick={() => void abrirMeta()}>
+                  Mudar
+                </button>
+              ) : undefined
+            }
+          >
+            {metaDaProxima !== null && resumo.meta !== null ? (
+              <FolhaDaMeta
+                metaDestaSemana={resumo.meta}
+                metaDaProxima={metaDaProxima}
+                onFechar={() => setMetaDaProxima(null)}
+                onSalva={(definida) => {
+                  setMetaDaProxima(null);
+                  setRecadoDaMeta(textoDaMudanca(definida.valeAPartir, resumo.meta ?? definida.meta));
+                }}
+              />
+            ) : null}
+          </ResumoDaSemana>
+        ) : null}
+        {recadoDaMeta !== null ? (
+          <p className={estilos.recado} role="status">
+            {recadoDaMeta}
+          </p>
+        ) : null}
+        {erroDaMeta !== null ? (
+          <p className={estilos.erro} role="alert">
+            {erroDaMeta}
+          </p>
+        ) : null}
       </section>
 
       <section className={estilos.bloco} aria-labelledby="mens">
