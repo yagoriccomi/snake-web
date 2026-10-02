@@ -88,8 +88,9 @@ npm run e2e
 
 - O teste compila e sobe a própria página na porta 3101 (o primeiro passo leva alguns minutos) e recusa rodar se o `.env.local` apontar para
   qualquer endereço que não seja `localhost`.
-- A chave de serviço vem do `supabase status` do `snake-thai`, na hora, e não é gravada em
-  arquivo. Para usar outra pasta: `E2E_SNAKE_THAI_DIR`.
+- A chave de serviço e o endereço do banco vêm do `supabase status` do `snake-thai`, na hora, e não
+  são gravados em arquivo. Para usar outra pasta: `E2E_SNAKE_THAI_DIR`. Para passar à mão:
+  `E2E_SUPABASE_SERVICE_ROLE_KEY` e `E2E_DB_URL` (só endereços locais).
 - Ele cria as próprias contas, turma e plano (e-mails em `@e2e.invalid`) e apaga tudo no fim,
   inclusive o que uma rodada interrompida deixou. Não depende do seed do banco local.
 - Se o banco local for recriado no meio da rodada, rode de novo.

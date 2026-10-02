@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { FormularioDeJustificativa } from '@/components/FormularioDeJustificativa';
+import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
 import { diaEMesDoInstante } from '@/lib/aulas';
 import {
@@ -115,7 +115,7 @@ function Justificativas(): React.JSX.Element {
                 </button>
               ) : null}
               {reenviando === j.id ? (
-                <FormularioDeJustificativa
+                <FormularioDeMotivo
                   titulo="Reenviar a justificativa"
                   contexto={`${assuntoDaJustificativa(j)} · é a última tentativa.`}
                   rotuloDoEnvio="Reenviar"

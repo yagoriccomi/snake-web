@@ -5,25 +5,34 @@ import { useId, useState } from 'react';
 import { mensagemDaJustificativa } from '@/lib/erros';
 import { TAMANHO_MAXIMO_DA_JUSTIFICATIVA } from '@/lib/justificativas';
 
-import estilos from './FormularioDeJustificativa.module.css';
+import estilos from './FormularioDeMotivo.module.css';
 
 /**
- * Texto obrigatório da justificativa, com o contador do limite do banco. Serve
- * à falta da aula, à semana do livre e ao reenvio; quem chama decide qual RPC.
+ * Texto obrigatório com o contador do limite do banco: a justificativa (falta
+ * da aula, semana do livre, reenvio) e o motivo do "Eu estava na aula". Quem
+ * chama decide qual RPC; o padrão é o da justificativa.
  *
  * Sem anexo até o G2: as rotas novas do servidor ainda não estão em produção.
  */
-export function FormularioDeJustificativa({
+export function FormularioDeMotivo({
   titulo,
   contexto,
+  rotulo = 'Motivo da falta',
+  dica = 'Conte o motivo da falta (obrigatório)',
+  limite = TAMANHO_MAXIMO_DA_JUSTIFICATIVA,
   rotuloDoEnvio = 'Enviar justificativa',
+  rotuloDoFechar = 'Agora não',
   onEnviar,
   onFechar,
 }: {
   titulo: string;
-  /** Uma linha sobre o que se justifica (a aula, a semana, a última tentativa). */
+  /** Uma linha sobre o que se envia (a aula, a semana, a última tentativa). */
   contexto?: string;
+  rotulo?: string;
+  dica?: string;
+  limite?: number;
   rotuloDoEnvio?: string;
+  rotuloDoFechar?: string;
   /** Lança o erro para o formulário mostrar; resolve quando o banco aceitou. */
   onEnviar: (texto: string) => Promise<void>;
   onFechar: () => void;
@@ -50,21 +59,21 @@ export function FormularioDeJustificativa({
       <p className={estilos.titulo}>{titulo}</p>
       {contexto !== undefined ? <p className={estilos.contexto}>{contexto}</p> : null}
       <label className={estilos.rotulo} htmlFor={campo}>
-        Motivo da falta
+        {rotulo}
       </label>
       <textarea
         id={campo}
         className={estilos.area}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        maxLength={TAMANHO_MAXIMO_DA_JUSTIFICATIVA}
+        maxLength={limite}
         rows={3}
-        placeholder="Conte o motivo da falta (obrigatório)"
+        placeholder={dica}
         required
         disabled={enviando}
       />
       <p className={estilos.contador}>
-        {texto.length}/{TAMANHO_MAXIMO_DA_JUSTIFICATIVA}
+        {texto.length}/{limite}
       </p>
       {erro !== null ? (
         <p className={estilos.erro} role="alert">
@@ -81,7 +90,7 @@ export function FormularioDeJustificativa({
           {enviando ? 'Enviando…' : rotuloDoEnvio}
         </button>
         <button className={estilos.secundario} type="button" onClick={onFechar} disabled={enviando}>
-          Agora não
+          {rotuloDoFechar}
         </button>
       </div>
     </div>

@@ -47,10 +47,40 @@ export function lerAmbientePublico(): AmbientePublico {
   return { url, anonKey };
 }
 
+interface StatusLocal {
+  API_URL?: string;
+  SERVICE_ROLE_KEY?: string;
+  DB_URL?: string;
+}
+
+/** O `supabase status` do `snake-thai` (`E2E_SNAKE_THAI_DIR`, padrão `../snake-thai`). */
+function lerStatusLocal(): StatusLocal {
+  const pasta = process.env.E2E_SNAKE_THAI_DIR ?? path.resolve(process.cwd(), '..', 'snake-thai');
+  const saida = execSync('npx --no-install supabase status -o json', {
+    cwd: pasta,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  return JSON.parse(saida) as StatusLocal;
+}
+
+/**
+ * Conexão direta com o Postgres local, só para a limpeza do que a API não
+ * apaga (aula com chamada concluída). Vem de `E2E_DB_URL` ou do status, e
+ * passa pela mesma trava de endereço local.
+ */
+export function lerUrlDoBancoLocal(): string {
+  const url = process.env.E2E_DB_URL ?? lerStatusLocal().DB_URL ?? '';
+  if (url === '') throw new Error('E2E: o supabase status não trouxe o endereço do banco.');
+  exigirLocal(url, 'o endereço do banco');
+  process.env.E2E_DB_URL = url;
+  return url;
+}
+
 /**
  * Chave de serviço do banco local. Vem de `E2E_SUPABASE_SERVICE_ROLE_KEY` ou,
- * sem ela, do `supabase status` do `snake-thai` (`E2E_SNAKE_THAI_DIR`, padrão
- * `../snake-thai`). Confere que o status fala do mesmo banco que a página.
+ * sem ela, do `supabase status` do `snake-thai`. Confere que o status fala do
+ * mesmo banco que a página.
  */
 export function lerChaveDeServico(urlDaPagina: string): string {
   const daVariavel = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
@@ -58,13 +88,11 @@ export function lerChaveDeServico(urlDaPagina: string): string {
     return daVariavel;
   }
 
-  const pasta = process.env.E2E_SNAKE_THAI_DIR ?? path.resolve(process.cwd(), '..', 'snake-thai');
-  const saida = execSync('npx --no-install supabase status -o json', {
-    cwd: pasta,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
-  const status = JSON.parse(saida) as { API_URL?: string; SERVICE_ROLE_KEY?: string };
+  const status = lerStatusLocal();
+  if (status.DB_URL !== undefined) {
+    exigirLocal(status.DB_URL, 'o endereço do banco');
+    process.env.E2E_DB_URL = status.DB_URL;
+  }
   const urlDoStatus = status.API_URL ?? '';
   exigirLocal(urlDoStatus, 'o supabase status');
   if (porta(urlDoStatus) !== porta(urlDaPagina)) {
