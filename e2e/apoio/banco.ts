@@ -451,3 +451,17 @@ export async function marcarVou(userId: string, classId: string): Promise<void> 
     .insert({ class_id: classId, user_id: userId, declared_status: 'present' });
   if (error !== null) throw new Error(`E2E: marcar o Vou falhou: ${error.message}`);
 }
+
+/**
+ * Nega a justificativa da aula como sistema: é o que a decisão do professor
+ * faz no app. O banco cuida do resto (quem negou não aparece, D16; o prazo do
+ * reenvio conta de `reviewed_at`).
+ */
+export async function negarJustificativa(userId: string, classId: string): Promise<void> {
+  const { error } = await banco()
+    .from('absence_justifications')
+    .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('class_id', classId);
+  if (error !== null) throw new Error(`E2E: negar a justificativa falhou: ${error.message}`);
+}
