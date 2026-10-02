@@ -168,6 +168,17 @@ export function feitasDeEsperadas(feitas: number, esperadas: number): string {
   return `${feitas} de ${esperadas}`;
 }
 
+/** Rótulo da modalidade (§ 3); sem plano conta como fixo (T5). */
+export const ROTULO_DA_MODALIDADE: Record<Modalidade, string> = {
+  fixed: 'Horário fixo',
+  free: 'Horário livre',
+  unlimited: 'À vontade',
+};
+
+export function rotuloDaModalidade(modalidade: Modalidade | null): string {
+  return ROTULO_DA_MODALIDADE[modalidade ?? 'fixed'];
+}
+
 /** À vontade: "Meta da semana" e "Meta do mês"; os outros: "Semana" e "Mês". */
 export function rotulosDaFrequencia(modalidade: Modalidade | null): { semana: string; mes: string } {
   return modalidade === 'unlimited'

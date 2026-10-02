@@ -14,6 +14,7 @@ import {
   formatarPercentual,
   nomeDoMes,
   primeiroDiaDoMes,
+  rotuloDaModalidade,
   rotulosDaFrequencia,
   semanasParaJustificar,
   somarMeses,
@@ -148,6 +149,7 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
       ) : (
         <>
           <div className={estilos.resumo}>
+            <span className={estilos.modalidade}>{rotuloDaModalidade(doMes?.modalidade ?? null)}</span>
             <span className={estilos.rotulo}>{rotulos.mes}</span>
             <span className={estilos.valor}>{formatarPercentual(doMes?.percentual ?? null)}</span>
             <span className={estilos.rotulo}>
