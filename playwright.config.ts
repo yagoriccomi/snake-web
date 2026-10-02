@@ -8,6 +8,10 @@ import { lerAmbientePublico } from './e2e/apoio/ambiente';
  * A página sobe numa porta própria (não a 3001 do contêiner) com as mesmas
  * URL e chave anônima que o `.env.local` dá e que a trava conferiu como
  * locais. O envio de comprovante vai para o Storage, como no ambiente local.
+ *
+ * Sobe compilada (`next build` + `next start`), não pelo `next dev`: no modo
+ * de desenvolvimento cada rota compila na primeira visita, e numa máquina
+ * ocupada isso passava do tempo do teste e virava falha falsa.
  */
 const PORTA = 3101;
 const { url, anonKey } = lerAmbientePublico();
@@ -32,10 +36,10 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `npx next dev -p ${PORTA}`,
+    command: `npx next build && npx next start -p ${PORTA}`,
     url: `http://localhost:${PORTA}`,
     reuseExistingServer: false,
-    timeout: 180_000,
+    timeout: 600_000,
     env: {
       NEXT_PUBLIC_SUPABASE_URL: url,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,

@@ -86,7 +86,7 @@ npx playwright install chromium   # uma vez só
 npm run e2e
 ```
 
-- O teste sobe a própria página na porta 3101 e recusa rodar se o `.env.local` apontar para
+- O teste compila e sobe a própria página na porta 3101 (o primeiro passo leva alguns minutos) e recusa rodar se o `.env.local` apontar para
   qualquer endereço que não seja `localhost`.
 - A chave de serviço vem do `supabase status` do `snake-thai`, na hora, e não é gravada em
   arquivo. Para usar outra pasta: `E2E_SNAKE_THAI_DIR`.

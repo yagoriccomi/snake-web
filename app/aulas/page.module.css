@@ -30,6 +30,21 @@
   line-height: 1.5;
 }
 
+.dia {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rotuloDoDia {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
 .lista {
   list-style: none;
   margin: 0;
@@ -39,34 +54,9 @@
   gap: 10px;
 }
 
-.item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
-.cabecalhoDoItem {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
 
-.quando {
-  margin: 0;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
 
-.turma {
-  margin: 2px 0 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
 
 .selo {
   font-size: 12px;

@@ -22,6 +22,8 @@
   --error: #c81e1e;
   --success: #15803d;
   --warning: #b45309;
+  /* Acento informativo (selos Livres e Troca), o mesmo do app no claro. */
+  --info: #1e3a8a;
 
   --radius: 12px;
   --radius-pill: 9999px;
@@ -53,6 +55,9 @@
     --error: #f87171;
     --success: #22c55e;
     --warning: #f59e0b;
+    /* O #1e3a8a do app fica perto de 2:1 sobre o fundo escuro, ilegível como
+       texto; este é o dos mockups aprovados (versão 8), acima de 4,5:1. */
+    --info: #93c5fd;
   }
 }
 
