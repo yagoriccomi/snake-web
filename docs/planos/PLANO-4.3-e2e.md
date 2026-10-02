@@ -49,7 +49,7 @@
 | P4 | Os documentos legais só são criados quando não há nenhum vigente daquele tipo | Documento vigente vale para o banco inteiro; com o seed, o E2E usa os que já existem (a conta nova não aceitou nenhum) | Se outra conta local aceitar o documento sintético no meio da rodada, a limpeza dele falha e avisa |
 | P5 | O `audit_log` dos registros sintéticos também é apagado (por `entity_id`) | Sem isso, cada rodada deixaria no banco local o rastro de perfis e faturas inventados | — |
 | P6 | Um navegador (Chromium) e um processo, em série | As telas leem o mesmo banco; em paralelo, a falha de uma confundiria a outra [#48] | Ligar mais processos depois, se ficar lento |
-| P7 | A página sobe pelo `next dev` na porta 3101 | Não disputa a 3001 do contêiner `snake-web-dev`, e recarrega o código da branch | Trocar a constante |
+| P7 | A página sobe compilada (`next build` + `next start`) na porta 3101. *Revisto em 02/10, no 6.1:* começou pelo `next dev`, mas a primeira compilação de cada rota, com a máquina ocupada, passava do tempo do teste | Não disputa a 3001 do contêiner `snake-web-dev`; sem compilação no meio do teste, e mais perto da produção | Trocar a constante |
 | P8 | Sem a `design-de-interface-projeto` | Nenhuma tela muda | — |
 
 ## 4. Decisão Visual
