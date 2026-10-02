@@ -110,3 +110,60 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.recado {
+  margin: 0;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tituloDaSecao {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.selos {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selo {
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Troca expirada ou cancelada: sem destaque, o texto basta. */
+.estado[data-situacao='expired'],
+.estado[data-situacao='cancelled'] {
+  color: var(--text-secondary);
+}
+
+.botaoLink {
+  align-self: flex-start;
+  min-height: var(--hit);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--primary-text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}

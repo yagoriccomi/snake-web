@@ -72,6 +72,10 @@ export interface AulaDoAluno {
   recorrente: boolean;
   /** `AAAA-MM-DD`: último dia do horário, quando ele tem fim. */
   horarioTerminaEm: string | null;
+  /** A troca mais recente desta aula (a que o "Desistir da troca" desfaz). */
+  trocaId: string | null;
+  /** Ele ainda pode desistir dela (§ 9.4, T36): o banco decide. */
+  podeDesistirDaTroca: boolean;
   troca: Troca | null;
 }
 
@@ -140,6 +144,8 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     podeTrocarPara: linha.can_swap_to === true,
     recorrente: linha.is_recurring === true,
     horarioTerminaEm: texto(linha.schedule_ends_on),
+    trocaId: texto(linha.swap_id),
+    podeDesistirDaTroca: linha.can_cancel_swap === true,
     troca: troca(linha),
   };
 }

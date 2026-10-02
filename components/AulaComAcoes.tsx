@@ -1,6 +1,7 @@
 'use client';
 
 import { CartaoDeAula, SeloDaAula } from '@/components/CartaoDeAula';
+import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { FolhaDeTroca } from '@/components/FolhaDeTroca';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import type { AcoesDaAula } from '@/hooks/useAcoesDaAula';
@@ -33,11 +34,19 @@ export function AulaComAcoes({
   semana?: readonly AulaDoAluno[];
 }): React.JSX.Element {
   const podeTrocar = semana !== undefined && aula.podeTrocarPara;
+  const trocaId = aula.podeDesistirDaTroca ? aula.trocaId : null;
   return (
     <CartaoDeAula
       aula={aula}
       lateral={<LateralDaAula aula={aula} acoes={acoes} podeTrocar={podeTrocar} />}
     >
+      {trocaId !== null && acoes.desistindoAula === aula.id ? (
+        <ConfirmarDesistencia
+          descricao={`${aula.titulo} · ${formatarDiaEHora(aula.quando)}`}
+          onDesistir={() => acoes.desistir(trocaId)}
+          onVoltar={acoes.fecharFormularios}
+        />
+      ) : null}
       {podeTrocar && acoes.trocandoAula === aula.id ? (
         <FolhaDeTroca
           nova={aula}
@@ -81,12 +90,14 @@ function LateralDaAula({
 }): React.JSX.Element | null {
   const estado = estadoDaAula(aula);
   const declarar = acoesDeDeclarar(aula, new Date());
+  const podeDesistir = aula.podeDesistirDaTroca && aula.trocaId !== null;
   if (
     estado === null &&
     aula.justificativa === null &&
     declarar.length === 0 &&
     !aula.podeContestar &&
-    !podeTrocar
+    !podeTrocar &&
+    !podeDesistir
   ) {
     return null;
   }
@@ -111,6 +122,16 @@ function LateralDaAula({
           {acao.rotulo}
         </button>
       ))}
+      {podeDesistir ? (
+        <button
+          className={estilos.botaoLink}
+          type="button"
+          onClick={() => acoes.abrirDesistencia(aula.id)}
+          disabled={acoes.ocupado}
+        >
+          Desistir da troca
+        </button>
+      ) : null}
       {podeTrocar ? (
         <button
           className={estilos.botaoLink}

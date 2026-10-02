@@ -4,9 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { lerAulaDoAluno, type AulaDoAluno } from '@/lib/aulas';
 import { ErroDeValidacao } from '@/lib/erros';
 import {
+  buscarMinhasTrocas,
+  descricaoDaAulaDaTroca,
+  desistirDaTroca,
   ehReposicao,
   opcoesDeOrigem,
   pedirTroca,
+  rotuloDaTroca,
   textoDoFimDoHorario,
   tiposPossiveis,
 } from '@/lib/trocas';
@@ -112,5 +116,69 @@ describe('folha Trocar aula (6.13)', () => {
     const { falso } = cliente({ pedir_troca_de_aula: { data: null, error: recusa } });
 
     await expect(pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'once' })).rejects.toBe(recusa);
+  });
+});
+
+describe('Meus pedidos e Desistir da troca (6.14)', () => {
+  it('desistir_da_troca com o id da troca', async () => {
+    const { falso, chamadas } = cliente({});
+
+    await desistirDaTroca(falso, 'troca-1');
+
+    expect(chamadas).toEqual([['desistir_da_troca', { p_id: 'troca-1' }]]);
+  });
+
+  it('a recusa da desistência sobe com a frase do banco', async () => {
+    const recusa = { code: '23514', message: 'Não dá mais para desistir: uma das aulas já começou.' };
+    const { falso } = cliente({ desistir_da_troca: { data: null, error: recusa } });
+
+    await expect(desistirDaTroca(falso, 'troca-1')).rejects.toBe(recusa);
+  });
+
+  it('minhas_trocas vira a lista, com o texto da permanente', async () => {
+    const { falso } = cliente({
+      minhas_trocas: {
+        data: [
+          {
+            id: 't1',
+            kind: 'permanent',
+            status: 'pending',
+            decided_via: null,
+            from_title: 'Turma Noite',
+            from_date_time: '2026-09-24T22:00:00Z',
+            to_title: null,
+            to_date_time: null,
+            is_makeup: false,
+            motivo_texto: 'Mudei de turno.',
+            approved_by_name: null,
+            can_cancel: true,
+          },
+        ],
+        error: null,
+      },
+    });
+
+    const [troca] = await buscarMinhasTrocas(falso);
+
+    expect(troca).toMatchObject({ tipo: 'permanent', motivo: 'Mudei de turno.', podeDesistir: true });
+    expect(descricaoDaAulaDaTroca(troca.tituloPara, troca.quandoPara)).toBe('Aula removida');
+    expect(descricaoDaAulaDaTroca(troca.tituloDe, troca.quandoDe)).toBe(
+      'Turma Noite · qui 24/09 19:00',
+    );
+  });
+
+  it('rótulos da § 3, sem nunca mostrar quem negou', () => {
+    const r = (
+      situacao: Parameters<typeof rotuloDaTroca>[0]['situacao'],
+      extra: { decididaPor?: string; aprovadaPor?: string } = {},
+    ) => rotuloDaTroca({ situacao, decididaPor: null, aprovadaPor: null, ...extra });
+
+    expect(r('pending')).toBe('Troca pendente');
+    expect(r('approved', { aprovadaPor: 'Ana' })).toBe('Troca aprovada por Ana');
+    expect(r('approved', { decididaPor: 'system' })).toBe('Troca abonada: a aula nova foi cancelada');
+    expect(r('rejected')).toBe('Troca negada');
+    expect(r('expired')).toBe('Troca expirada · vale a aula original');
+    expect(r('cancelled', { decididaPor: 'student' })).toBe('Você desistiu da troca');
+    expect(r('cancelled', { decididaPor: 'system' })).toBe('Troca cancelada');
   });
 });
