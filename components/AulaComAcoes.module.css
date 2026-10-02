@@ -1,0 +1,102 @@
+/* Ações do cartão de aula, aviso de cota e mensagens. Só tokens de tema. */
+
+.selo {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.selo[data-situacao='pending'] {
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+  /* A cor pura sobre o fundo tingido fica abaixo de 4,5:1 no tema claro (texto
+     de 12 px); misturada ao texto principal, passa nos dois temas. */
+  color: color-mix(in srgb, var(--warning) 80%, var(--text-primary));
+}
+
+.selo[data-situacao='approved'] {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: color-mix(in srgb, var(--success) 80%, var(--text-primary));
+}
+
+.selo[data-situacao='rejected'] {
+  background: color-mix(in srgb, var(--error) 16%, transparent);
+  color: color-mix(in srgb, var(--error) 80%, var(--text-primary));
+}
+
+.recado {
+  margin: 0;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+/* Ações do cartão, como na linha F: "Vou" em chip; "Desmarcar" e "Desfazer" em link. */
+.chip {
+  min-height: var(--hit);
+  min-width: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Vou / Não vou do fixo: o que ele já avisou fica preenchido. */
+.chip[aria-pressed='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.chip:disabled,
+.botaoLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.botaoLink {
+  min-height: var(--hit);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--primary-text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Aviso de acima da cota: não bloqueia, fica por cima do fim da lista até o
+   aluno desfazer ou fazer outra coisa. */
+.toast {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--info);
+  border-radius: 14px;
+  background: var(--surface-elevated);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text-primary) 25%, transparent);
+}
+
+.toastTexto {
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
