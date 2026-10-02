@@ -1,7 +1,5 @@
 'use client';
 
-import type { SituacaoDaJustificativa } from '@/lib/aulas';
-import { ErroDeValidacao } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -132,49 +130,4 @@ export function rotuloDoAceite(documentos: readonly { tipo: TipoDeDocumento }[])
 export const TITULO_DO_DOCUMENTO: Record<TipoDeDocumento, string> = {
   privacy_policy: 'Política de Privacidade',
   terms_of_use: 'Termos de Uso',
-};
-
-// ----------------------------------------------------------------------------
-// Avisar falta e justificar
-// ----------------------------------------------------------------------------
-
-/** Limite do banco para o texto da justificativa. */
-export const TAMANHO_MAXIMO_DA_JUSTIFICATIVA = 255;
-
-/**
- * Envia a justificativa da falta.
- *
- * Sem anexo por enquanto: o arquivo exigiria o mesmo caminho assinado do
- * comprovante, e a academia aceita justificativa só com o texto. O anexo entra
- * quando alguém precisar mandar atestado.
- */
-export async function justificarFalta(
-  classId: string,
-  userId: string,
-  mensagem: string,
-): Promise<void> {
-  const texto = mensagem.trim();
-  if (texto === '') {
-    throw new ErroDeValidacao('Escreva o motivo da falta.');
-  }
-  if (texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA) {
-    throw new ErroDeValidacao(
-      `A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`,
-    );
-  }
-  const { error } = await supabase
-    .from('absence_justifications')
-    .upsert(
-      { class_id: classId, user_id: userId, message: texto },
-      { onConflict: 'class_id,user_id' },
-    );
-  if (error !== null) {
-    throw error;
-  }
-}
-
-export const ROTULO_DA_JUSTIFICATIVA: Record<SituacaoDaJustificativa, string> = {
-  pending: 'Em análise',
-  approved: 'Aceita',
-  rejected: 'Recusada',
 };

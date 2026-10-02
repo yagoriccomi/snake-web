@@ -1,0 +1,84 @@
+/* Formulário da justificativa. Só tokens de tema. */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.titulo {
+  margin: 0;
+  font-weight: 600;
+}
+
+.contexto {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.rotulo {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.area {
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--input-background);
+  color: var(--text-primary);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.contador {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.erro {
+  margin: 0;
+  color: var(--error);
+  line-height: 1.4;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.primario,
+.secundario {
+  min-height: var(--hit);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primario {
+  border: none;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.secundario {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.primario:disabled,
+.secundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

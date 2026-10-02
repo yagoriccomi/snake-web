@@ -50,6 +50,8 @@ export interface AulaDoAluno {
   /** Presença pela chamada do professor; nula sem chamada. */
   presenca: SituacaoDaPresenca | null;
   justificativa: SituacaoDaJustificativa | null;
+  /** Fixo: a aula ainda aceita justificativa (prazo, grade, troca: o banco decide). */
+  podeJustificar: boolean;
   modalidade: Modalidade | null;
   /** Cota (livre) ou meta (à vontade) da semana da aula; nula no fixo. */
   meta: number | null;
@@ -114,6 +116,7 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     declarada: texto(linha.declared_status) as SituacaoDaPresenca | null,
     presenca: texto(linha.status) as SituacaoDaPresenca | null,
     justificativa: texto(linha.justification_status) as SituacaoDaJustificativa | null,
+    podeJustificar: linha.can_justify === true,
     modalidade: texto(linha.schedule_mode) as Modalidade | null,
     meta: typeof linha.weekly_target === 'number' ? linha.weekly_target : null,
     professores: professores(linha.teachers),
@@ -178,6 +181,11 @@ function diaEMes(instante: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, day: '2-digit', month: '2-digit' }).format(
     instante,
   );
+}
+
+/** "dd/mm" de um instante, no fuso da academia. */
+export function diaEMesDoInstante(iso: string): string {
+  return diaEMes(new Date(iso));
 }
 
 export function formatarHora(iso: string): string {

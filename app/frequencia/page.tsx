@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { FormularioDeJustificativa } from '@/components/FormularioDeJustificativa';
 import { Protegida } from '@/components/Protegida';
-import { chaveDoDia } from '@/lib/aulas';
+import { chaveDoDia, diaEMesDoInstante } from '@/lib/aulas';
 import {
   avisoDeMesAberto,
   buscarFrequenciaDoMes,
@@ -14,10 +15,13 @@ import {
   nomeDoMes,
   primeiroDiaDoMes,
   rotulosDaFrequencia,
+  semanasParaJustificar,
   somarMeses,
+  textoDasQueRestam,
   type FrequenciaDoMes,
   type SemanaDoMes,
 } from '@/lib/frequencia';
+import { enviarJustificativa, rotuloDaJustificativa } from '@/lib/justificativas';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -41,6 +45,8 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [doMes, setDoMes] = useState<FrequenciaDoMes | null>(null);
   const [semanas, setSemanas] = useState<SemanaDoMes[]>([]);
+  const [justificando, setJustificando] = useState<string | null>(null);
+  const [recado, setRecado] = useState<string | null>(null);
 
   const carregar = useCallback(
     async (alvo: string) => {
@@ -68,7 +74,16 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
 
   const irPara = (alvo: string): void => {
     setEstado('carregando');
+    setJustificando(null);
+    setRecado(null);
     setMes(alvo);
+  };
+
+  const justificarSemana = async (semana: string, texto: string): Promise<void> => {
+    await enviarJustificativa(supabase, { escopo: 'week', semana, texto });
+    setJustificando(null);
+    setRecado('Justificativa enviada. A academia vai analisar.');
+    await carregar(mes);
   };
 
   const rotulos = rotulosDaFrequencia(doMes?.modalidade ?? null);
@@ -171,6 +186,69 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
               </tbody>
             </table>
           )}
+
+          {recado !== null ? (
+            <p className={estilos.recado} role="status">
+              {recado}
+            </p>
+          ) : null}
+
+          {semanasParaJustificar(semanas).length > 0 ? (
+            <section className={estilos.justificativas} aria-labelledby="justificativas">
+              <h2 className={estilos.secao} id="justificativas">
+                Justificativas
+              </h2>
+              {semanasParaJustificar(semanas).map((semana) => (
+                <div className={estilos.semana} key={semana.inicio}>
+                  <p className={estilos.tituloDaSemana}>
+                    {`${semana.rotulo} · ${diaEMesDaData(semana.inicio)}–${diaEMesDaData(semana.fim)}`}
+                  </p>
+                  {semana.justificativas.map((j) => (
+                    <p className={estilos.estado} data-situacao={j.situacao} key={j.id}>
+                      {rotuloDaJustificativa({ ...j, podeReenviar: false, reenviarAte: null })}
+                    </p>
+                  ))}
+                  {semana.podeJustificar && justificando !== semana.inicio ? (
+                    <div className={estilos.acaoDaSemana}>
+                      <p className={estilos.dica}>
+                        {[
+                          semana.justificarAte !== null
+                            ? `Até ${diaEMesDoInstante(semana.justificarAte)}`
+                            : null,
+                          semana.justificativasRestantes !== null
+                            ? textoDasQueRestam(semana.justificativasRestantes)
+                            : null,
+                        ]
+                          .filter((parte): parte is string => parte !== null)
+                          .join(' · ')}
+                      </p>
+                      <button
+                        className={estilos.botaoLink}
+                        type="button"
+                        onClick={() => {
+                          setRecado(null);
+                          setJustificando(semana.inicio);
+                        }}
+                      >
+                        Justificar mais 1 aula
+                      </button>
+                    </div>
+                  ) : null}
+                  {justificando === semana.inicio ? (
+                    <FormularioDeJustificativa
+                      titulo={`Justificar 1 aula · semana ${diaEMesDaData(semana.inicio)}–${diaEMesDaData(semana.fim)}`}
+                      onEnviar={(texto) => justificarSemana(semana.inicio, texto)}
+                      onFechar={() => setJustificando(null)}
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </section>
+          ) : null}
+
+          <a className={estilos.link} href="/justificativas">
+            Minhas justificativas →
+          </a>
         </>
       )}
     </main>

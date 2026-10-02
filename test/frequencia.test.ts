@@ -11,7 +11,9 @@ import {
   formatarPercentual,
   nomeDoMes,
   rotulosDaFrequencia,
+  semanasParaJustificar,
   somarMeses,
+  textoDasQueRestam,
   type FrequenciaDoMes,
 } from '@/lib/frequencia';
 
@@ -105,7 +107,13 @@ describe('leitura das RPCs de frequência', () => {
     const semanas = await buscarSemanasDoMes(falso, USUARIO, '2026-07-01');
 
     expect(chamadas).toEqual([['semanas_do_mes', { p_user_id: USUARIO, p_mes: '2026-07-01' }]]);
-    expect(semanas[0]).toMatchObject({ rotulo: 'Semana extra', dividida: true, feitasNoMes: 1 });
+    expect(semanas[0]).toMatchObject({
+      rotulo: 'Semana extra',
+      dividida: true,
+      feitasNoMes: 1,
+      podeJustificar: false,
+      justificativas: [],
+    });
   });
 });
 
@@ -160,5 +168,40 @@ describe('avisoDeMesAberto', () => {
   it('o último dia do mês ainda é o mês, no fuso da academia', () => {
     // 01/07 01:00 UTC ainda é 30/06 em São Paulo.
     expect(avisoDeMesAberto(junho, '2026-06-01', new Date('2026-07-01T01:00:00Z'))).toBeNull();
+  });
+});
+
+describe('justificativas da semana do livre (6.6)', () => {
+  it('lê o que a semana aceita e as justificativas dela', async () => {
+    const { falso } = cliente({
+      data: [
+        {
+          week_start: '2026-09-21',
+          week_end: '2026-09-27',
+          label: 'S4',
+          is_split: false,
+          can_justify: true,
+          justify_until: '2026-10-04T02:59:59Z',
+          justifications_left: 1,
+          justificativas: [{ id: 'j1', status: 'approved', attempt: 1, approved_by_name: 'Ana' }],
+        },
+        { week_start: '2026-09-28', week_end: '2026-10-04', label: 'S5', can_justify: false },
+      ],
+      error: null,
+    });
+
+    const semanas = await buscarSemanasDoMes(falso, USUARIO, '2026-09-01');
+
+    expect(semanas[0]).toMatchObject({
+      podeJustificar: true,
+      justificativasRestantes: 1,
+      justificativas: [{ id: 'j1', situacao: 'approved', tentativa: 1, aprovadaPor: 'Ana' }],
+    });
+    expect(semanasParaJustificar(semanas).map((s) => s.rotulo)).toEqual(['S4']);
+  });
+
+  it('quantas restam, no singular e no plural', () => {
+    expect(textoDasQueRestam(1)).toBe('resta 1 justificativa');
+    expect(textoDasQueRestam(2)).toBe('restam 2 justificativas');
   });
 });

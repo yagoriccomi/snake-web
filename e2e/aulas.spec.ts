@@ -88,7 +88,7 @@ test.describe('/aulas', () => {
     await item.getByRole('button', { name: 'Não vou' }).click();
 
     await expect(page.getByRole('status')).toHaveText('Avisamos que você não vem.');
-    const campo = item.getByLabel('Motivo da falta (opcional)');
+    const campo = item.getByLabel('Motivo da falta');
     const enviar = item.getByRole('button', { name: 'Enviar justificativa' });
     await expect(enviar).toBeDisabled();
     await campo.fill('   ');
@@ -102,7 +102,7 @@ test.describe('/aulas', () => {
     await expect(page.getByRole('status')).toHaveText(
       'Justificativa enviada. A academia vai analisar.',
     );
-    await expect(item.getByText('Em análise')).toBeVisible();
+    await expect(item.getByText('Justificativa em análise')).toBeVisible();
     const justificativa = await banco()
       .from('absence_justifications')
       .select('message, status')
