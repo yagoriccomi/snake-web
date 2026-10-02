@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { FormularioDeJustificativa } from '@/components/FormularioDeJustificativa';
+import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
 import { chaveDoDia, diaEMesDoInstante } from '@/lib/aulas';
 import {
@@ -235,7 +235,7 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
                     </div>
                   ) : null}
                   {justificando === semana.inicio ? (
-                    <FormularioDeJustificativa
+                    <FormularioDeMotivo
                       titulo={`Justificar 1 aula · semana ${diaEMesDaData(semana.inicio)}–${diaEMesDaData(semana.fim)}`}
                       onEnviar={(texto) => justificarSemana(semana.inicio, texto)}
                       onFechar={() => setJustificando(null)}

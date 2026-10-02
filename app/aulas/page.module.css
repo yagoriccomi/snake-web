@@ -199,3 +199,9 @@
   font-size: 14px;
   line-height: 1.4;
 }
+
+.atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}

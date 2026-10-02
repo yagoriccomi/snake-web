@@ -52,6 +52,8 @@ export interface AulaDoAluno {
   justificativa: SituacaoDaJustificativa | null;
   /** Fixo: a aula ainda aceita justificativa (prazo, grade, troca: o banco decide). */
   podeJustificar: boolean;
+  /** "Eu estava na aula": chamada feita, ele sem presença, dentro do prazo (T19). */
+  podeContestar: boolean;
   modalidade: Modalidade | null;
   /** Cota (livre) ou meta (à vontade) da semana da aula; nula no fixo. */
   meta: number | null;
@@ -117,6 +119,7 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     presenca: texto(linha.status) as SituacaoDaPresenca | null,
     justificativa: texto(linha.justification_status) as SituacaoDaJustificativa | null,
     podeJustificar: linha.can_justify === true,
+    podeContestar: linha.can_contest === true,
     modalidade: texto(linha.schedule_mode) as Modalidade | null,
     meta: typeof linha.weekly_target === 'number' ? linha.weekly_target : null,
     professores: professores(linha.teachers),
