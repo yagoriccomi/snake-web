@@ -1,5 +1,6 @@
 'use client';
 
+import type { SituacaoDaJustificativa } from '@/lib/aulas';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -23,13 +24,6 @@ export interface Mensalidade {
   vencimento: string;
   valorCentavos: number;
   situacao: 'open' | 'overdue' | 'pending_approval' | 'paid';
-}
-
-export interface Aula {
-  id: string;
-  quando: string;
-  titulo: string;
-  tipo: string;
 }
 
 /** Frequência do mês corrente. Mês sem aula nenhuma vale 100%. */
@@ -69,25 +63,6 @@ export async function buscarMensalidadesAbertas(userId: string): Promise<Mensali
   }));
 }
 
-/** Próximas aulas da turma do aluno. */
-export async function buscarProximasAulas(limite = 5): Promise<Aula[]> {
-  const { data, error } = await supabase
-    .from('classes')
-    .select('id, date_time, title, type')
-    .gte('date_time', new Date().toISOString())
-    .order('date_time', { ascending: true })
-    .limit(limite);
-  if (error !== null) {
-    throw error;
-  }
-  return (data ?? []).map((linha) => ({
-    id: String(linha.id),
-    quando: String(linha.date_time),
-    titulo: String(linha.title ?? 'Aula'),
-    tipo: String(linha.type ?? 'routine'),
-  }));
-}
-
 /** Reais a partir de centavos — dinheiro nunca em ponto flutuante na conta. */
 export function formatarDinheiro(centavos: number): string {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -95,13 +70,6 @@ export function formatarDinheiro(centavos: number): string {
 
 export function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-}
-
-export function formatarDataHora(iso: string): string {
-  const data = new Date(iso);
-  const dia = data.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
-  const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return `${dia} · ${hora}`;
 }
 
 export const ROTULO_DA_SITUACAO: Record<Mensalidade['situacao'], string> = {
@@ -200,12 +168,6 @@ export const TAMANHO_MAXIMO_DA_JUSTIFICATIVA = 255;
 
 export type SituacaoDeclarada = 'present' | 'absent';
 
-export interface Justificativa {
-  classId: string;
-  mensagem: string | null;
-  situacao: 'pending' | 'approved' | 'rejected';
-}
-
 /**
  * Avisa que vem ou que falta.
  *
@@ -227,22 +189,6 @@ export async function avisarPresenca(
   if (error !== null) {
     throw error;
   }
-}
-
-/** Justificativas do próprio aluno, por aula. */
-export async function buscarMinhasJustificativas(userId: string): Promise<Justificativa[]> {
-  const { data, error } = await supabase
-    .from('absence_justifications')
-    .select('class_id, message, status')
-    .eq('user_id', userId);
-  if (error !== null) {
-    throw error;
-  }
-  return (data ?? []).map((linha) => ({
-    classId: String(linha.class_id),
-    mensagem: linha.message === null ? null : String(linha.message),
-    situacao: linha.status as Justificativa['situacao'],
-  }));
 }
 
 /**
@@ -275,7 +221,7 @@ export async function justificarFalta(
   }
 }
 
-export const ROTULO_DA_JUSTIFICATIVA: Record<Justificativa['situacao'], string> = {
+export const ROTULO_DA_JUSTIFICATIVA: Record<SituacaoDaJustificativa, string> = {
   pending: 'Em análise',
   approved: 'Aceita',
   rejected: 'Recusada',

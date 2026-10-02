@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { CartaoDeAula } from '@/components/CartaoDeAula';
 import { Protegida, type UsuarioLiberado } from '@/components/Protegida';
+import { agruparPorDia, buscarAulasDoAluno, type AulaDoAluno } from '@/lib/aulas';
 import {
   buscarFrequencia,
   buscarMensalidadesAbertas,
-  buscarProximasAulas,
   formatarData,
-  formatarDataHora,
   formatarDinheiro,
   ROTULO_DA_SITUACAO,
-  type Aula,
   type Frequencia,
   type Mensalidade,
 } from '@/lib/dados';
@@ -24,6 +23,10 @@ const FREQUENCIA_MINIMA = 70;
 
 type Estado = 'carregando' | 'pronto' | 'erro';
 
+/** A inicial mostra só as próximas; a lista inteira fica em Aulas. */
+const AULAS_NA_INICIAL = 3;
+const SETE_DIAS_EM_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default function PaginaInicial(): React.JSX.Element {
   return <Protegida etapa="aluno">{(usuario) => <Inicio usuario={usuario} />}</Protegida>;
 }
@@ -32,7 +35,7 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [frequencia, setFrequencia] = useState<Frequencia | null>(null);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
-  const [aulas, setAulas] = useState<Aula[]>([]);
+  const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const nome = (usuario.nome ?? 'aluno').split(' ')[0];
 
   const sair = useCallback(() => {
@@ -43,15 +46,16 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
 
   useEffect(() => {
     void (async () => {
+      const agora = new Date();
       try {
         const [freq, pagamentos, proximas] = await Promise.all([
           buscarFrequencia(usuario.id),
           buscarMensalidadesAbertas(usuario.id),
-          buscarProximasAulas(),
+          buscarAulasDoAluno(supabase, agora, new Date(agora.getTime() + SETE_DIAS_EM_MS)),
         ]);
         setFrequencia(freq);
         setMensalidades(pagamentos);
-        setAulas(proximas);
+        setAulas(proximas.slice(0, AULAS_NA_INICIAL));
         setEstado('pronto');
       } catch {
         setEstado('erro');
@@ -154,22 +158,22 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
             Próximas aulas
           </h2>
           <a className={estilos.verTodas} href="/aulas">
-            Avisar falta
+            Ver todas as aulas
           </a>
         </div>
         {aulas.length === 0 ? (
           <p className={estilos.vazio}>Nenhuma aula marcada por enquanto.</p>
         ) : (
-          <ul className={estilos.lista}>
-            {aulas.map((aula) => (
-              <li className={estilos.item} key={aula.id}>
-                <div>
-                  <p className={estilos.itemTitulo}>{formatarDataHora(aula.quando)}</p>
-                  <p className={estilos.itemDetalhe}>{aula.titulo}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          agruparPorDia(aulas, new Date()).map((dia) => (
+            <div className={estilos.dia} key={dia.chave}>
+              <p className={estilos.rotuloDoDia}>{dia.rotulo}</p>
+              <ul className={estilos.lista}>
+                {dia.aulas.map((aula) => (
+                  <CartaoDeAula key={aula.id} aula={aula} />
+                ))}
+              </ul>
+            </div>
+          ))
         )}
       </section>
 

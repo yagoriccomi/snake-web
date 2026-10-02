@@ -1,0 +1,144 @@
+/* Cartão de aula da linha F dos mockups (versão 8). Só tokens de tema. */
+
+.cartao {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hora {
+  width: 46px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding-top: 1px;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trilho {
+  width: 4px;
+  min-height: 40px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trilho span {
+  flex: 1;
+  border-radius: 2px;
+}
+
+.corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Riscada, mas com o selo "Cancelada" escrito: o risco nunca é o único sinal. */
+.linha[data-cancelada='true'] .titulo,
+.linha[data-cancelada='true'] .hora {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.detalhes {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.detalhes:empty {
+  display: none;
+}
+
+.nota {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.professor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.lateral {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.selo[data-tom='cancelada'] {
+  color: var(--error);
+}
+
+.selo[data-tom='livres'],
+.selo[data-tom='troca'] {
+  color: var(--info);
+}
+
+.selo[data-tom='fixos'] {
+  color: var(--text-secondary);
+}
+
+.selo[data-tom='sua'] {
+  color: var(--text-primary);
+}
+
+.selo[data-tom='pendente'] {
+  color: var(--warning);
+}
+
+.selo[data-tom='extra'],
+.selo[data-tom='marcada'] {
+  color: var(--primary-text);
+}
