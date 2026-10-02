@@ -12,9 +12,18 @@ financeiro —, e é por aqui que ele acompanha tudo.
 - Entrar com a mesma conta do aplicativo
 - Primeiro acesso: trocar a senha e confirmar os dados
 - Ler e aceitar a Política de Privacidade e os Termos de Uso
-- Ver a própria frequência do mês e o histórico
-- Ver as próximas aulas, avisar falta e enviar justificativa
+- Ver a frequência da semana e do mês, as semanas do mês e o histórico de aulas
+- Ver as próprias aulas e avisar que vai ou que falta; no horário livre, a cota da semana; no à
+  vontade, mudar a meta
+- Escolher aulas da semana e da próxima; no horário fixo, marcar aula extra e pedir troca de aula
+  (só nesta semana ou permanente) e desistir dela
+- Justificar a falta (por aula ou, no horário livre, por semana) e reenviar a justificativa negada
+- Pedir "Eu estava na aula" quando a chamada saiu sem a presença
+- Acompanhar justificativas, trocas e pedidos, e falar com a academia
 - Ver as mensalidades e enviar o comprovante de pagamento
+
+Os anexos (atestado na justificativa, no "Eu estava na aula" e na troca permanente) chegam quando as
+rotas novas do servidor estiverem em produção.
 
 **Só alunos entram aqui.** Professores e administradores são barrados na
 entrada: a chamada, a aprovação de comprovantes e a gestão da academia vivem no
