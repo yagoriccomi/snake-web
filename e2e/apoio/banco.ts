@@ -1,8 +1,9 @@
 import { randomBytes, randomInt } from 'node:crypto';
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { Client } from 'pg';
 
-import { lerAmbientePublico, lerChaveDeServico } from './ambiente';
+import { lerAmbientePublico, lerChaveDeServico, lerUrlDoBancoLocal } from './ambiente';
 
 /**
  * Os dados sintéticos do E2E: criados no começo, apagados no fim (regra C6).
@@ -348,6 +349,8 @@ export interface OpcoesDeAula {
   cancelada?: boolean;
   /** Horário exato, para duas aulas no mesmo minuto. */
   quando?: Date;
+  /** Chamada já concluída (para o "Eu estava na aula"). */
+  chamadaFeita?: boolean;
 }
 
 /** Aula de rotina da turma da rodada, daqui a alguns minutos. */
@@ -367,6 +370,7 @@ export async function criarAula(
         group_id: opcoes.daOutraTurma === true ? mundo.outraTurmaId : mundo.turmaId,
         audience: 'both',
         cancelled_at: opcoes.cancelada === true ? new Date().toISOString() : null,
+        attendance_taken_at: opcoes.chamadaFeita === true ? new Date().toISOString() : null,
       })
       .select('id')
       .single(),
@@ -409,6 +413,41 @@ export async function mensalidadeAberta(mundo: Mundo, userId: string): Promise<s
 // ----------------------------------------------------------------------------
 
 /**
+ * Aula com chamada concluída não se apaga pela API: a trava do banco manda
+ * cancelar em vez de apagar, e a chamada não volta a pendente. Para as aulas
+ * sintéticas, a trava é desligada só dentro de uma transação, que a religa
+ * antes do commit: a mudança de esquema é transacional, então nenhuma outra
+ * sessão vê o banco sem a trava, e as cascatas continuam valendo.
+ */
+async function apagarAulasComChamada(): Promise<void> {
+  const { data, error } = await banco()
+    .from('classes')
+    .select('id')
+    .like('group_id', `${PREFIXO}%`)
+    .not('attendance_taken_at', 'is', null);
+  if (error !== null) throw new Error(`E2E: ler as aulas com chamada falhou: ${error.message}`);
+  if (data.length === 0) return;
+
+  const conexao = new Client({ connectionString: lerUrlDoBancoLocal() });
+  await conexao.connect();
+  try {
+    await conexao.query('begin');
+    await conexao.query('alter table public.classes disable trigger enforce_class_state_rules');
+    await conexao.query(
+      'delete from public.classes where group_id like $1 and attendance_taken_at is not null',
+      [`${PREFIXO}%`],
+    );
+    await conexao.query('alter table public.classes enable trigger enforce_class_state_rules');
+    await conexao.query('commit');
+  } catch (falha) {
+    await conexao.query('rollback');
+    throw falha;
+  } finally {
+    await conexao.end();
+  }
+}
+
+/**
  * Apaga tudo o que tem a marca do E2E, inclusive o que uma rodada interrompida
  * deixou para trás. Nunca toca no que não tem a marca.
  */
@@ -424,6 +463,8 @@ export async function apagarTudoDoE2E(): Promise<void> {
     // As contas apagadas saem da lista: a mesma página volta com as seguintes.
     if (nossas.length > 0) pagina -= 1;
   }
+
+  await apagarAulasComChamada();
 
   const planos = await db.from('plans').select('id').like('name', `${PREFIXO_DO_PLANO}%`);
   const idsDosPlanos = (planos.data ?? []).map((plano) => String(plano.id));
