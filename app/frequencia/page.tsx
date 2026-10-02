@@ -45,7 +45,11 @@ const ROTULO_DA_SEMANA_EXTRA = 'Semana extra';
  * de `frequencia_do_mes` e `semanas_do_mes`.
  */
 export default function PaginaDeFrequencia(): React.JSX.Element {
-  return <Protegida etapa="aluno">{(usuario) => <Frequencia userId={usuario.id} />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="inicio">
+      {(usuario) => <Frequencia userId={usuario.id} />}
+    </Protegida>
+  );
 }
 
 function Frequencia({ userId }: { userId: string }): React.JSX.Element {

@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
 import { diaEMesDoInstante } from '@/lib/aulas';
 import {
   assuntoDaJustificativa,
   buscarMinhasJustificativas,
+  negadaPelaSegundaVez,
   reenviarJustificativa,
   rotuloDaJustificativa,
   type MinhaJustificativa,
@@ -24,7 +26,11 @@ type Estado = 'carregando' | 'pronto' | 'erro';
  * decide se ainda dá para reenviar (`can_resend`) e até quando.
  */
 export default function PaginaDeJustificativas(): React.JSX.Element {
-  return <Protegida etapa="aluno">{() => <Justificativas />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="aulas">
+      {() => <Justificativas />}
+    </Protegida>
+  );
 }
 
 function Justificativas(): React.JSX.Element {
@@ -102,6 +108,7 @@ function Justificativas(): React.JSX.Element {
               <p className={estilos.estado} data-situacao={j.situacao}>
                 {rotuloDaJustificativa(j)}
               </p>
+              {negadaPelaSegundaVez(j) ? <BlocoDeContato /> : null}
               {j.podeReenviar && j.reenviarAte !== null && reenviando !== j.id ? (
                 <button
                   className={estilos.botaoLink}

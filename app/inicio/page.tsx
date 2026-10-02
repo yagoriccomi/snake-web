@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { CartaoDeAula } from '@/components/CartaoDeAula';
 import { CartaoDeFrequencia } from '@/components/CartaoDeFrequencia';
@@ -41,7 +41,11 @@ const AULAS_NA_INICIAL = 3;
 const SETE_DIAS_EM_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default function PaginaInicial(): React.JSX.Element {
-  return <Protegida etapa="aluno">{(usuario) => <Inicio usuario={usuario} />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="inicio">
+      {(usuario) => <Inicio usuario={usuario} />}
+    </Protegida>
+  );
 }
 
 function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
@@ -56,12 +60,6 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [recadoDaMeta, setRecadoDaMeta] = useState<string | null>(null);
   const [erroDaMeta, setErroDaMeta] = useState<string | null>(null);
   const nome = (usuario.nome ?? 'aluno').split(' ')[0];
-
-  const sair = useCallback(() => {
-    void supabase.auth.signOut().then(() => {
-      window.location.href = '/';
-    });
-  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -119,9 +117,6 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
     <main className={estilos.pagina}>
       <header className={estilos.cabecalho}>
         <h1 className={estilos.marca}>Olá, {nome}</h1>
-        <button className={estilos.sair} type="button" onClick={sair}>
-          Sair
-        </button>
       </header>
 
       <section className={estilos.bloco} aria-labelledby="freq">

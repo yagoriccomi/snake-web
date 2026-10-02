@@ -35,7 +35,11 @@ function segundaDa(semana: Semana): string {
  * cada aula só pelas colunas de `menu_de_aulas`. Sem vagas nem contagem (T43).
  */
 export default function PaginaDaSemana(): React.JSX.Element {
-  return <Protegida etapa="aluno">{() => <AulasDaSemana />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="aulas">
+      {() => <AulasDaSemana />}
+    </Protegida>
+  );
 }
 
 function AulasDaSemana(): React.JSX.Element {

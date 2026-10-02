@@ -1,5 +1,6 @@
 'use client';
 
+import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { CartaoDeAula, SeloDaAula } from '@/components/CartaoDeAula';
 import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { FolhaDeTroca } from '@/components/FolhaDeTroca';
@@ -40,6 +41,7 @@ export function AulaComAcoes({
       aula={aula}
       lateral={<LateralDaAula aula={aula} acoes={acoes} podeTrocar={podeTrocar} />}
     >
+      {aula.troca?.situacao === 'rejected' ? <BlocoDeContato /> : null}
       {trocaId !== null && acoes.desistindoAula === aula.id ? (
         <ConfirmarDesistencia
           descricao={`${aula.titulo} · ${formatarDiaEHora(aula.quando)}`}
