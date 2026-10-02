@@ -35,6 +35,7 @@ test.describe('Frequência (6.3)', () => {
     const hoje = new Date();
     await expect(page.getByText(nomeDoMes(hoje), { exact: true })).toBeVisible();
     await expect(page.getByRole('table')).toContainText('S1');
+    await expect(page.getByText('Horário fixo', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Próximo mês' })).toBeDisabled();
   });
 

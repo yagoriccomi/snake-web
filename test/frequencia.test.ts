@@ -10,6 +10,7 @@ import {
   feitasDeEsperadas,
   formatarPercentual,
   nomeDoMes,
+  rotuloDaModalidade,
   rotulosDaFrequencia,
   semanasParaJustificar,
   somarMeses,
@@ -203,5 +204,14 @@ describe('justificativas da semana do livre (6.6)', () => {
   it('quantas restam, no singular e no plural', () => {
     expect(textoDasQueRestam(1)).toBe('resta 1 justificativa');
     expect(textoDasQueRestam(2)).toBe('restam 2 justificativas');
+  });
+});
+
+describe('rótulo da modalidade (6.9)', () => {
+  it('os três da § 3, e sem plano conta como fixo', () => {
+    expect(rotuloDaModalidade('fixed')).toBe('Horário fixo');
+    expect(rotuloDaModalidade('free')).toBe('Horário livre');
+    expect(rotuloDaModalidade('unlimited')).toBe('À vontade');
+    expect(rotuloDaModalidade(null)).toBe('Horário fixo');
   });
 });
