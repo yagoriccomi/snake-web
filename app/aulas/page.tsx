@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { Protegida } from '@/components/Protegida';
 import {
   avisarPresenca,
   buscarMinhasJustificativas,
@@ -13,7 +14,6 @@ import {
   type Aula,
   type Justificativa,
 } from '@/lib/dados';
-import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
 
@@ -26,10 +26,13 @@ type Estado = 'carregando' | 'pronto' | 'erro';
  * chamada. A tela diz isso, para ninguém achar que avisar já conta.
  */
 export default function PaginaDeAulas(): React.JSX.Element {
+  return <Protegida etapa="aluno">{(usuario) => <Aulas userId={usuario.id} />}</Protegida>;
+}
+
+function Aulas({ userId }: { userId: string }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [justificativas, setJustificativas] = useState<Justificativa[]>([]);
-  const [userId, setUserId] = useState('');
   const [escrevendoPara, setEscrevendoPara] = useState<string | null>(null);
   const [texto, setTexto] = useState('');
   const [ocupado, setOcupado] = useState(false);
@@ -37,17 +40,10 @@ export default function PaginaDeAulas(): React.JSX.Element {
   const [recado, setRecado] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
-    const { data: sessao } = await supabase.auth.getSession();
-    const usuario = sessao.session?.user;
-    if (usuario === undefined) {
-      window.location.href = '/';
-      return;
-    }
-    setUserId(usuario.id);
     try {
       const [proximas, minhas] = await Promise.all([
         buscarProximasAulas(10),
-        buscarMinhasJustificativas(usuario.id),
+        buscarMinhasJustificativas(userId),
       ]);
       setAulas(proximas);
       setJustificativas(minhas);
@@ -55,7 +51,7 @@ export default function PaginaDeAulas(): React.JSX.Element {
     } catch {
       setEstado('erro');
     }
-  }, []);
+  }, [userId]);
 
   // O estado só muda depois da rede, nunca no corpo do efeito: nada de render em cascata.
   useEffect(() => {
