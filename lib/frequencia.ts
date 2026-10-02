@@ -186,7 +186,7 @@ export function primeiroDiaDoMes(data: string): string {
 }
 
 /** Último dia do mês de `mes` (`AAAA-MM-…`), `AAAA-MM-DD`. */
-function ultimoDiaDoMes(mes: string): string {
+export function ultimoDiaDoMes(mes: string): string {
   const ano = Number(mes.slice(0, 4));
   const mesNumero = Number(mes.slice(5, 7));
   const dias = new Date(Date.UTC(ano, mesNumero, 0)).getUTCDate();

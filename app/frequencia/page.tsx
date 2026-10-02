@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
-import { chaveDoDia, diaEMesDoInstante } from '@/lib/aulas';
+import { chaveDoDia, diaEMesDoInstante, formatarDiaEHora } from '@/lib/aulas';
 import {
   avisoDeMesAberto,
   buscarFrequenciaDoMes,
@@ -18,9 +18,17 @@ import {
   semanasParaJustificar,
   somarMeses,
   textoDasQueRestam,
+  ultimoDiaDoMes,
   type FrequenciaDoMes,
   type SemanaDoMes,
 } from '@/lib/frequencia';
+import {
+  atrasoDaChamada,
+  buscarHistoricoDoAluno,
+  situacaoNoHistorico,
+  tomDaSituacao,
+  type AulaDoHistorico,
+} from '@/lib/historico';
 import { enviarJustificativa, rotuloDaJustificativa } from '@/lib/justificativas';
 import { supabase } from '@/lib/supabase';
 
@@ -45,18 +53,21 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [doMes, setDoMes] = useState<FrequenciaDoMes | null>(null);
   const [semanas, setSemanas] = useState<SemanaDoMes[]>([]);
+  const [historico, setHistorico] = useState<AulaDoHistorico[]>([]);
   const [justificando, setJustificando] = useState<string | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
 
   const carregar = useCallback(
     async (alvo: string) => {
       try {
-        const [frequencia, linhas] = await Promise.all([
+        const [frequencia, linhas, aulasDoMes] = await Promise.all([
           buscarFrequenciaDoMes(supabase, userId, alvo),
           buscarSemanasDoMes(supabase, userId, alvo),
+          buscarHistoricoDoAluno(supabase, userId, alvo, ultimoDiaDoMes(alvo)),
         ]);
         setDoMes(frequencia);
         setSemanas(linhas);
+        setHistorico(aulasDoMes);
         setEstado('pronto');
       } catch {
         setEstado('erro');
@@ -243,6 +254,38 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
                   ) : null}
                 </div>
               ))}
+            </section>
+          ) : null}
+
+          {historico.length > 0 ? (
+            <section className={estilos.justificativas} aria-labelledby="historico">
+              <h2 className={estilos.secao} id="historico">
+                Histórico de aulas
+              </h2>
+              <ul className={estilos.historico}>
+                {historico.map((aula) => {
+                  const atraso = atrasoDaChamada(aula.diasDeAtraso);
+                  return (
+                    <li className={estilos.linhaDoHistorico} key={aula.id}>
+                      <time className={estilos.quando} dateTime={aula.quando}>
+                        {formatarDiaEHora(aula.quando)}
+                      </time>
+                      <span className={estilos.corpoDoHistorico}>
+                        <span className={estilos.tituloDaAula}>{aula.titulo}</span>
+                        {aula.editada || atraso !== null ? (
+                          <span className={estilos.marcas}>
+                            {aula.editada ? <span className={estilos.marca}>Editada</span> : null}
+                            {atraso !== null ? <span className={estilos.marca}>{atraso}</span> : null}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={estilos.situacao} data-tom={tomDaSituacao(aula)}>
+                        {situacaoNoHistorico(aula)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
           ) : null}
 
