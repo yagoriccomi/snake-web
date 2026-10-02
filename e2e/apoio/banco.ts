@@ -415,12 +415,12 @@ export async function apagarTudoDoE2E(): Promise<void> {
 }
 
 /**
- * Extra já marcada pelo fixo, gravada direto como sistema. É o estado que o
- * "Vou (extra)" do menu (6.12) deixa; aqui só serve para testar o Desmarcar.
+ * "Vou" já gravado, direto como sistema: o estado que o "Vou" ou o "Vou
+ * (extra)" deixam, para o teste partir dele sem passar pela tela.
  */
-export async function marcarExtra(userId: string, classId: string): Promise<void> {
+export async function marcarVou(userId: string, classId: string): Promise<void> {
   const { error } = await banco()
     .from('attendance')
     .insert({ class_id: classId, user_id: userId, declared_status: 'present' });
-  if (error !== null) throw new Error(`E2E: marcar a extra falhou: ${error.message}`);
+  if (error !== null) throw new Error(`E2E: marcar o Vou falhou: ${error.message}`);
 }
