@@ -75,6 +75,25 @@ O `npm install` liga dois ganchos do Git (Husky):
 
 Os dois comandos também rodam à mão.
 
+### Testes de ponta a ponta (E2E)
+
+`npm run e2e` abre a página num navegador automático (Playwright) e repete o roteiro de
+conferência das telas: login, aceite dos termos, primeiro acesso, comprovante e aulas. Roda
+**só contra o banco local**, que precisa estar no ar (`scripts\db-dev start`, no `snake-thai`).
+
+```bash
+npx playwright install chromium   # uma vez só
+npm run e2e
+```
+
+- O teste sobe a própria página na porta 3101 e recusa rodar se o `.env.local` apontar para
+  qualquer endereço que não seja `localhost`.
+- A chave de serviço vem do `supabase status` do `snake-thai`, na hora, e não é gravada em
+  arquivo. Para usar outra pasta: `E2E_SNAKE_THAI_DIR`.
+- Ele cria as próprias contas, turma e plano (e-mails em `@e2e.invalid`) e apaga tudo no fim,
+  inclusive o que uma rodada interrompida deixou. Não depende do seed do banco local.
+- Se o banco local for recriado no meio da rodada, rode de novo.
+
 ## Variáveis de ambiente
 
 | Variável | O que é |
