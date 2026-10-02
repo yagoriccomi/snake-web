@@ -1,6 +1,7 @@
 'use client';
 
 import type { SituacaoDaJustificativa } from '@/lib/aulas';
+import { ErroDeValidacao } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -166,31 +167,6 @@ export const TITULO_DO_DOCUMENTO: Record<TipoDeDocumento, string> = {
 /** Limite do banco para o texto da justificativa. */
 export const TAMANHO_MAXIMO_DA_JUSTIFICATIVA = 255;
 
-export type SituacaoDeclarada = 'present' | 'absent';
-
-/**
- * Avisa que vem ou que falta.
- *
- * Grava em `declared_status`, NUNCA em `status`: a presença só vale pela
- * chamada do professor. O aviso é intenção, não presença — se a interface
- * escrevesse no lugar errado, o aluno marcaria a própria frequência.
- */
-export async function avisarPresenca(
-  classId: string,
-  userId: string,
-  declarada: SituacaoDeclarada,
-): Promise<void> {
-  const { error } = await supabase
-    .from('attendance')
-    .upsert(
-      { class_id: classId, user_id: userId, declared_status: declarada },
-      { onConflict: 'class_id,user_id' },
-    );
-  if (error !== null) {
-    throw error;
-  }
-}
-
 /**
  * Envia a justificativa da falta.
  *
@@ -205,10 +181,12 @@ export async function justificarFalta(
 ): Promise<void> {
   const texto = mensagem.trim();
   if (texto === '') {
-    throw new Error('Escreva o motivo da falta.');
+    throw new ErroDeValidacao('Escreva o motivo da falta.');
   }
   if (texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA) {
-    throw new Error(`A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`);
+    throw new ErroDeValidacao(
+      `A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`,
+    );
   }
   const { error } = await supabase
     .from('absence_justifications')
