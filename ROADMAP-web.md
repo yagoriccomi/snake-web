@@ -201,9 +201,11 @@ Hoje não existe nenhum. Proposta enxuta, focada no que quebra em silêncio: [#4
   `problemaNoArquivo`. **A regra de senha precisa bater com a do app e com a do Supabase**: se a
   web aceitar uma senha que o Supabase recusa, o item 3.1 vira realidade.
 - [x] **4.2** Teste do caminho de falha do primeiro acesso, que nasce junto com a correção 3.1.
-- [ ] **4.3** *(decisão sua)* E2E com Playwright contra o banco local, cobrindo o roteiro da
-  Fase 1: é a versão automática do que hoje só você confere clicando. Vale se a web crescer.
-  Se ela continuar deste tamanho, o roteiro manual basta. [#43]
+- [ ] **4.3** E2E com Playwright contra o banco local, cobrindo o roteiro da Fase 1: é a versão
+  automática do que hoje só você confere clicando. **Decidido em 29/09 (D11): sim, agora.** Segue a
+  C6: contas e dados sintéticos próprios, criados e apagados pelo teste; nunca `db-dev reset` nem
+  `db-dev test`; reler o Registro do app na `origin/main` antes de rodar; só as chaves do banco
+  local. Cresce a cada tela da Fase 6. [#43]
 
 ---
 
@@ -357,7 +359,10 @@ A web de hoje continua em produção até o 6.11. O que ela faz de errado com o 
 
 ## Fase 7 — Acompanhar o app
 
-**7.1 — Central de avisos na web (decisão sua; recomendo sim, só leitura).**
+**7.1 — Central de avisos na web. Decidida em 29/09 (D9): sim, só leitura.** O app desenha o 5.1
+para as duas interfaces lerem do mesmo lugar (tabela ou RPC que o aluno lê, com RLS de aluno), e
+isso entra no contrato antes do 5.1c. **A tela da web espera o 5.1 do app na `main`.** A guarda da
+central é de 90 dias (D17) e gera uma versão nova da Política, com aceite novo aqui (7.2).
 
 - O app vai ganhar central de avisos e **recado em massa** (item 5.1 do roadmap do app, que era
   o 4.4 antes da nova direção), e o recado chega **por push**.
@@ -381,6 +386,9 @@ contrato, e o `snake-thai` só muda o contrato com uma versão nova.
 
 ## Fase 8 — CI (opcional)
 
+**Decidida em 29/09 (D10): não por ora.** Continuam o gate local (`pre-commit`) e o check da
+Vercel. Se você proteger a `main` (0.4), o check exigido é o da Vercel.
+
 `configurar-ci-cd-projeto`: lint, typecheck e os testes da Fase 4 a cada PR. **Opcional**: você
 pediu "esquece o CI" para o app em 2026-09-16, e a Vercel já recusa publicar código que não
 compila. O ganho real só aparece quando a Fase 4 existir. [#76]
@@ -393,9 +401,10 @@ compila. O ganho real só aparece quando a Fase 4 existir. [#76]
 | --- | --- | --- |
 | Trabalhar com branch e PR | **Adotado em 25/09** (PR da Fase 0). Falta o 0.4, proteger a `main` | 0.3 |
 | Cabeçalho com "Início" e "Sair" | **Decidida em 24/09:** a linha F aprovada traz **Início · Aulas · Sair** | 5.1 |
-| Central de avisos na web | Sim, só leitura | 7.1 |
-| E2E com Playwright | Só se a web crescer | 4.3 |
-| CI | Depois da Fase 4, se quiser | Fase 8 |
+| Central de avisos na web | **Decidida em 29/09 (D9): sim, só leitura.** O app desenha o 5.1 para as duas interfaces lerem do mesmo lugar; a tela da web espera o 5.1 do app na `main` | 7.1 |
+| E2E com Playwright | **Decidida em 29/09 (D11): sim, agora**, contra o banco local, cobrindo o roteiro da Fase 1 e seguindo a C6 | 4.3 |
+| CI | **Decidida em 29/09 (D10): não por ora.** Continuam o gate local e o check da Vercel; com a `main` protegida (0.4), o check exigido é o da Vercel | Fase 8 |
+| Branch da Fase 6 | **Decidida em 01/10 (D15):** branch de integração `fase-6`; cada item é um PR para ela, mesclado pelo chat com o check da Vercel verde (não publica). A `fase-6` vai para a `main` só no **G4** e com a confirmação do dono | Fase 6 |
 | Fonte Inter/Syne na web, igual ao app | Não por ora: os mockups da web usam a fonte do sistema | 6.9 |
 | ~~A prancheta "Web — escolher aulas e trocar" mostrava textos que nenhuma coluna do contrato traz ("Suas aulas: …" e "dá para repor até …")~~ | **Resolvido em 25/09:** o cartão saiu dos mockups (versão 8). A tela usa só as linhas de `menu_de_aulas`; a reposição aparece na folha "Trocar aula", pelo selo **Reposição** | 6.12 |
 
@@ -431,3 +440,4 @@ compila. O ganho real só aparece quando a Fase 4 existir. [#76]
 | 2026-09-25 | **5.2 feito** na branch `feat/a11y` (sobre a do 6.0), em PR, com a `acessibilidade-projeto`; relatório em `docs/planos/ENTREGA-5.2-acessibilidade.md`. Área de toque, rótulos e foco já estavam certos. **Dois achados sérios, corrigidos:** 3 selos do tema claro abaixo de 4,5:1 (3,81 a 4,39) → tinta misturada ao texto principal (≥ 5,15); borda dos campos a 1,3:1 → token derivado `--input-border` (3,44 no claro, 4,22 no escuro). **Menores:** dica de senha anunciada (`aria-live`) e ligada ao campo, "Carregando…" com `role="status"`, "✓" escondido do leitor de tela. Nenhum texto novo. **A validar com leitor de tela no celular (👤).** |
 | 2026-09-29 | **Correção C1 no 3.1** (`handoffs/COORDENACAO.md`, 28/09), na `fix/primeiro-acesso-senha` (PR #4), levada às branches de cima com merge. `same_password` deixou de concluir o primeiro acesso: a senha que a academia deu nunca continua valendo. A web segue a regra do app (P2 a P4 do `PLANO-2.4-senha-antes-da-flag.md` do `snake-thai`, PR #45): a senha que já passou nesta tela não é trocada de novo ao repetir o envio (um `useRef` na página), e "senha igual" mostra "A nova senha precisa ser diferente da anterior.", a mesma frase do app. Testes: 9 (4 novos, com o caminho de falha da senha igual). **Retirado** o pedido do Registro de 25/09 para o app copiar a regra da web. Plano: `docs/planos/PLANO-3.1b-senha-igual-nao-conclui.md`. |
 | 2026-09-29 | **PRs #3 e #4 mesclados** na `main` (merge commit, autorizados pela D1), e a produção da Vercel publicou os dois. O #4 já leva a correção C1. O #5 foi reapontado para a `main` e está verde; **o merge espera o dono enviar um comprovante pela prévia do #5** (`https://snake-owd058pyt-yagoriccomis-projects.vercel.app`), o único caminho que passa pela CSP nova rumo à Render e à Cloudinary. Depois, #5 a #8 em ordem, cada um com o check verde. As branches `chore/fundacao` e `fix/primeiro-acesso-senha` só serão apagadas no fim da pilha. **G3 conferido na `origin/main` do `snake-thai` (29/09, 11:34): fechado** (4.9b em aberto). Depois da pilha, não há item da web na fila. |
+| 2026-10-02 | **Decisões de 29/09 e 01/10 registradas** (`handoffs/COORDENACAO.md`; a entrada de 29/09 não tinha chegado a este chat, C7). **D9:** central de avisos na web, só leitura (7.1); a tela espera o 5.1 do app na `main`. **D10:** sem CI por ora (Fase 8); com a `main` protegida, o check exigido é o da Vercel. **D11:** E2E com Playwright agora (4.3), seguindo a C6. **D15:** a Fase 6 vai numa branch de integração `fase-6`, criada hoje a partir da `feat/a11y` (topo da pilha, com o 6.0); cada item é um PR para ela, mesclado por este chat com o check da Vercel verde; a `fase-6` vai para a `main` só no G4 e com a confirmação do dono; quando a pilha #5–#8 entrar, a `main` vem para a `fase-6` com merge. **G3 aberto em 29/09** (Registro do app na `origin/main`, PR #75): as 23 RPCs do aluno estão na `main` e no banco local, e a Fase 6 pode ser desenvolvida a partir do 6.1. Contrato na `origin/main`: ainda **v4**; a v5 (D12) não muda nada para a web. **C5 no PR #9** (a partir da `main`): com o código `23514`, o Vou / Não vou e a justificativa mostram a frase do banco; nos outros erros, a frase de conexão. Precisa estar no ar antes do `db-push-prod` da 2.0.0; **o merge publica e espera o dono**. Plano: `docs/planos/PLANO-C5-frase-do-banco.md`. *Só como informação:* D14 (comprovante guardado 90 dias) e D17 (central com guarda de 90 dias) entram na Política; a da D17 gera aceite novo aqui (7.2). |
