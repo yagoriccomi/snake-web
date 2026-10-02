@@ -2,20 +2,43 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { CartaoDeAula } from '@/components/CartaoDeAula';
+import { CartaoDeAula, SeloDaAula } from '@/components/CartaoDeAula';
 import { Protegida } from '@/components/Protegida';
-import { agruparPorDia, buscarAulasDoAluno, inicioDoDia, type AulaDoAluno } from '@/lib/aulas';
 import {
-  avisarPresenca,
+  acoesDeDeclarar,
+  agruparPorDia,
+  avisoDeCota,
+  buscarAulasDoAluno,
+  declararAula,
+  estadoDaAula,
+  inicioDoDia,
+  type AcaoDeDeclarar,
+  type AulaDoAluno,
+} from '@/lib/aulas';
+import {
   justificarFalta,
   ROTULO_DA_JUSTIFICATIVA,
   TAMANHO_MAXIMO_DA_JUSTIFICATIVA,
 } from '@/lib/dados';
+import { mensagemDaJustificativa, mensagemDoAviso } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
 
 type Estado = 'carregando' | 'pronto' | 'erro';
+
+/** O aviso de acima da cota guarda a aula, para o "Desfazer" saber o que desmarcar. */
+interface AvisoDeCota {
+  classId: string;
+  texto: string;
+}
+
+const RECADO_DA_ACAO: Record<AcaoDeDeclarar['rotulo'], string> = {
+  Vou: 'Avisamos que você vem.',
+  'Vou (extra)': 'Avisamos que você vem.',
+  'Não vou': 'Avisamos que você não vem.',
+  Desmarcar: 'Marcação desfeita.',
+};
 
 /** Hoje e os próximos seis dias: a semana que o aluno precisa enxergar. */
 const DIAS_NA_TELA = 7;
@@ -39,6 +62,7 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
+  const [cota, setCota] = useState<AvisoDeCota | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -58,22 +82,47 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
     })();
   }, [carregar]);
 
-  const avisar = useCallback(
-    async (aula: AulaDoAluno, vem: boolean) => {
+  const declarar = useCallback(
+    async (aula: AulaDoAluno, acao: AcaoDeDeclarar) => {
       setErro(null);
+      setRecado(null);
+      setCota(null);
       setOcupado(true);
       try {
-        await avisarPresenca(aula.id, userId, vem ? 'present' : 'absent');
-        setRecado(vem ? 'Avisamos que você vem.' : 'Avisamos que você não vem.');
-        if (!vem) setEscrevendoPara(aula.id);
-      } catch {
-        setErro('Não foi possível avisar. Verifique a conexão e tente de novo.');
+        const declaracao = await declararAula(supabase, aula.id, acao.vou);
+        const acima = avisoDeCota(declaracao);
+        if (acima !== null) {
+          setCota({ classId: aula.id, texto: acima });
+        } else {
+          setRecado(RECADO_DA_ACAO[acao.rotulo]);
+        }
+        // Só o "Não vou" do fixo, na aula da grade, abre a justificativa.
+        if (acao.rotulo === 'Não vou') setEscrevendoPara(aula.id);
+        await carregar();
+      } catch (falha) {
+        setErro(mensagemDoAviso(falha));
       } finally {
         setOcupado(false);
       }
     },
-    [userId],
+    [carregar],
   );
+
+  const desfazerAcimaDaCota = useCallback(async () => {
+    if (cota === null) return;
+    setErro(null);
+    setOcupado(true);
+    try {
+      await declararAula(supabase, cota.classId, false);
+      setCota(null);
+      setRecado(RECADO_DA_ACAO.Desmarcar);
+      await carregar();
+    } catch (falha) {
+      setErro(mensagemDoAviso(falha));
+    } finally {
+      setOcupado(false);
+    }
+  }, [cota, carregar]);
 
   const enviarJustificativa = useCallback(
     async (classId: string) => {
@@ -86,7 +135,7 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
         setRecado('Justificativa enviada. A academia vai analisar.');
         await carregar();
       } catch (falha) {
-        setErro(falha instanceof Error ? falha.message : 'Não foi possível enviar.');
+        setErro(mensagemDaJustificativa(falha));
       } finally {
         setOcupado(false);
       }
@@ -146,35 +195,13 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
                   key={aula.id}
                   aula={aula}
                   lateral={
-                    aula.justificativa !== null ? (
-                      <span className={estilos.selo} data-situacao={aula.justificativa}>
-                        {ROTULO_DA_JUSTIFICATIVA[aula.justificativa]}
-                      </span>
-                    ) : undefined
+                    <AcoesDaAula
+                      aula={aula}
+                      ocupado={ocupado}
+                      onDeclarar={(acao) => void declarar(aula, acao)}
+                    />
                   }
                 >
-                  {/* Os botões continuam os de hoje até o 6.2 trocar o aviso por declarar_aula. */}
-                  {aula.justificativa === null && !aula.cancelada ? (
-                    <div className={estilos.acoes}>
-                      <button
-                        className={estilos.botaoSecundario}
-                        type="button"
-                        onClick={() => void avisar(aula, true)}
-                        disabled={ocupado}
-                      >
-                        Vou
-                      </button>
-                      <button
-                        className={estilos.botaoSecundario}
-                        type="button"
-                        onClick={() => void avisar(aula, false)}
-                        disabled={ocupado}
-                      >
-                        Não vou
-                      </button>
-                    </div>
-                  ) : null}
-
                   {escrevendoPara === aula.id ? (
                     <div className={estilos.formulario}>
                       <label className={estilos.rotulo} htmlFor={`motivo-${aula.id}`}>
@@ -222,6 +249,64 @@ function Aulas({ userId }: { userId: string }): React.JSX.Element {
           </section>
         ))
       )}
+
+      {cota !== null ? (
+        <div className={estilos.toast} role="status">
+          <p className={estilos.toastTexto}>
+            <strong>Marcada, acima do plano</strong>
+            <span>{cota.texto}</span>
+          </p>
+          <button
+            className={estilos.botaoLink}
+            type="button"
+            onClick={() => void desfazerAcimaDaCota()}
+            disabled={ocupado}
+          >
+            Desfazer
+          </button>
+        </div>
+      ) : null}
     </main>
+  );
+}
+
+/**
+ * Coluna da direita do cartão: o estado (Marcada, Extra, a justificativa) e os
+ * botões de declarar, escolhidos só pelas colunas (tabela de ações da § 12.2).
+ */
+function AcoesDaAula({
+  aula,
+  ocupado,
+  onDeclarar,
+}: {
+  aula: AulaDoAluno;
+  ocupado: boolean;
+  onDeclarar: (acao: AcaoDeDeclarar) => void;
+}): React.JSX.Element | null {
+  const estado = estadoDaAula(aula);
+  const acoes = acoesDeDeclarar(aula, new Date());
+  if (estado === null && aula.justificativa === null && acoes.length === 0) return null;
+
+  return (
+    <>
+      {estado !== null ? <SeloDaAula selo={estado} /> : null}
+      {aula.justificativa !== null ? (
+        <span className={estilos.selo} data-situacao={aula.justificativa}>
+          {ROTULO_DA_JUSTIFICATIVA[aula.justificativa]}
+        </span>
+      ) : null}
+      {acoes.map((acao) => (
+        <button
+          key={acao.rotulo}
+          className={acao.rotulo === 'Desmarcar' ? estilos.botaoLink : estilos.chip}
+          type="button"
+          aria-pressed={acao.escolhido}
+          onClick={() => onDeclarar(acao)}
+          disabled={ocupado}
+        >
+          {acao.rotulo}
+        </button>
+      ))}
+    </>
   );
 }

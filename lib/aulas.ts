@@ -41,6 +41,8 @@ export interface Troca {
 export interface AulaDoAluno {
   id: string;
   titulo: string;
+  /** Evento: qualquer aluno declara, sem olhar público nem turma (§ 9.2). */
+  evento: boolean;
   quando: string;
   publico: Publico;
   cancelada: boolean;
@@ -50,6 +52,8 @@ export interface AulaDoAluno {
   professores: Professor[];
   /** Vocabulário da § 7.2 (`turma`, `troca`, `extra`, `trocou`…); nulo = aula que não é dele. */
   origem: string | null;
+  /** Fixo: pode marcar "Vou (extra)" agora (§ 9.5). */
+  podeMarcarExtra: boolean;
   troca: Troca | null;
 }
 
@@ -99,6 +103,7 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
   return {
     id: String(linha.class_id),
     titulo: texto(linha.title) ?? 'Aula',
+    evento: linha.type === 'event',
     quando: String(linha.date_time),
     publico: (texto(linha.audience) ?? 'both') as Publico,
     cancelada: linha.cancelled === true,
@@ -107,6 +112,7 @@ export function lerAulaDoAluno(linha: Linha): AulaDoAluno {
     modalidade: texto(linha.schedule_mode) as Modalidade | null,
     professores: professores(linha.teachers),
     origem: texto(linha.origem),
+    podeMarcarExtra: linha.can_mark_extra === true,
     troca: troca(linha),
   };
 }
@@ -256,4 +262,83 @@ export function notaDaTroca(aula: AulaDoAluno): string | null {
     return t.situacao === 'pending' ? `Troca pendente para ${outra}` : `Trocou para ${outra}`;
   }
   return t.situacao === 'approved' ? `no lugar de ${outra}` : null;
+}
+
+// ----------------------------------------------------------------------------
+// Declarar (§ 9.2, § 9.5 e a tabela de ações da § 12.2)
+// ----------------------------------------------------------------------------
+
+export interface AcaoDeDeclarar {
+  rotulo: 'Vou' | 'Não vou' | 'Vou (extra)' | 'Desmarcar';
+  /** O que vai para `declarar_aula(p_class_id, p_vou)`. */
+  vou: boolean;
+  /** Vou / Não vou do fixo: qual dos dois ele já avisou. */
+  escolhido?: boolean;
+}
+
+/** As origens em que a aula é da grade do fixo e ele avisa Vou / Não vou. */
+const ORIGENS_DA_GRADE = new Set(['turma', 'permanente', 'troca']);
+
+function ehLivre(aula: AulaDoAluno): boolean {
+  // Sem plano conta como fixo (T5): só livre e à vontade saem do caminho do fixo.
+  return aula.modalidade === 'free' || aula.modalidade === 'unlimited';
+}
+
+/** Na aula que ele trocou, ou com troca pendente, a ação é desistir da troca (6.14). */
+function emTroca(aula: AulaDoAluno): boolean {
+  if (aula.origem === 'trocou' || aula.origem === 'troca_pendente') return true;
+  return aula.troca?.papel === 'origem' && aula.troca.situacao === 'pending';
+}
+
+/**
+ * Os botões de declarar, só pelas colunas. Depois do início não há botão: o
+ * banco recusa a declaração (T26), e um botão que sempre falha não ajuda.
+ */
+export function acoesDeDeclarar(aula: AulaDoAluno, agora: Date): AcaoDeDeclarar[] {
+  if (aula.cancelada || new Date(aula.quando) <= agora || emTroca(aula)) return [];
+  const marcada = aula.declarada === 'present';
+
+  if (aula.evento || ehLivre(aula)) {
+    if (!aula.evento && aula.publico === 'fixed') return [];
+    return marcada ? [{ rotulo: 'Desmarcar', vou: false }] : [{ rotulo: 'Vou', vou: true }];
+  }
+
+  if (aula.origem !== null && ORIGENS_DA_GRADE.has(aula.origem)) {
+    return [
+      { rotulo: 'Vou', vou: true, escolhido: marcada },
+      { rotulo: 'Não vou', vou: false, escolhido: aula.declarada === 'absent' },
+    ];
+  }
+  if (aula.origem === 'extra') return [{ rotulo: 'Desmarcar', vou: false }];
+  if (aula.podeMarcarExtra) return [{ rotulo: 'Vou (extra)', vou: true }];
+  return [];
+}
+
+export interface Declaracao {
+  marcadasNaSemana: number;
+  cota: number | null;
+  acimaDaCota: boolean;
+}
+
+export async function declararAula(
+  cliente: SupabaseClient,
+  classId: string,
+  vou: boolean,
+): Promise<Declaracao> {
+  const { data, error } = await cliente.rpc('declarar_aula', { p_class_id: classId, p_vou: vou });
+  if (error !== null) {
+    throw error;
+  }
+  const resposta = (data ?? {}) as Linha;
+  return {
+    marcadasNaSemana: Number(resposta.marcadas_na_semana ?? 0),
+    cota: typeof resposta.cota === 'number' ? resposta.cota : null,
+    acimaDaCota: resposta.acima_da_cota === true,
+  };
+}
+
+/** O aviso que não bloqueia (§ 3), com os números que o banco devolveu. */
+export function avisoDeCota(declaracao: Declaracao): string | null {
+  if (!declaracao.acimaDaCota || declaracao.cota === null) return null;
+  return `Você marcou ${declaracao.marcadasNaSemana} aulas nesta semana e seu plano é ${declaracao.cota}x. Pode ir: fica registrado acima do plano.`;
 }

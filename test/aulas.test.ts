@@ -2,8 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 
 import {
+  acoesDeDeclarar,
   agruparPorDia,
+  avisoDeCota,
   buscarAulasDoAluno,
+  declararAula,
   estadoDaAula,
   formatarDiaEHora,
   inicioDoDia,
@@ -213,5 +216,95 @@ describe('datas no fuso da academia', () => {
       ['Hoje · qua 23/09', ['a', 'b']],
       ['Qui 24/09', ['c']],
     ]);
+  });
+});
+
+describe('acoesDeDeclarar', () => {
+  // A aula de `linha()` é em 24/09 às 19:00 (SP); "antes" e "depois" do início.
+  const ANTES = new Date('2026-09-24T12:00:00Z');
+  const DEPOIS = new Date('2026-09-24T23:00:00Z');
+  const rotulos = (a: AulaDoAluno, agora = ANTES) => acoesDeDeclarar(a, agora).map((x) => x.rotulo);
+
+  it('livre e à vontade: Vou; marcada: Desmarcar', () => {
+    expect(rotulos(aula({ schedule_mode: 'free' }))).toEqual(['Vou']);
+    expect(rotulos(aula({ schedule_mode: 'unlimited', declared_status: 'present' }))).toEqual([
+      'Desmarcar',
+    ]);
+  });
+
+  it('livre não declara em aula só de fixos', () => {
+    expect(rotulos(aula({ schedule_mode: 'free', audience: 'fixed' }))).toEqual([]);
+  });
+
+  it('fixo na aula da grade: Vou / Não vou, com o que ele já avisou', () => {
+    const acoes = acoesDeDeclarar(aula({ origem: 'troca', declared_status: 'absent' }), ANTES);
+    expect(acoes).toEqual([
+      { rotulo: 'Vou', vou: true, escolhido: false },
+      { rotulo: 'Não vou', vou: false, escolhido: true },
+    ]);
+  });
+
+  it('fixo: Vou (extra) só com can_mark_extra, e a extra marcada se desmarca', () => {
+    expect(rotulos(aula({ can_mark_extra: true }))).toEqual(['Vou (extra)']);
+    expect(rotulos(aula())).toEqual([]);
+    expect(rotulos(aula({ origem: 'extra' }))).toEqual(['Desmarcar']);
+  });
+
+  it('evento: Vou para qualquer aluno, inclusive o fixo', () => {
+    expect(rotulos(aula({ type: 'event' }))).toEqual(['Vou']);
+  });
+
+  it('sem plano conta como fixo', () => {
+    expect(rotulos(aula({ schedule_mode: null, origem: 'turma' }))).toEqual(['Vou', 'Não vou']);
+  });
+
+  it('sem botão na aula cancelada, depois do início ou com troca saindo dela', () => {
+    expect(rotulos(aula({ origem: 'turma', cancelled: true }))).toEqual([]);
+    expect(rotulos(aula({ origem: 'turma' }), DEPOIS)).toEqual([]);
+    expect(rotulos(aula({ origem: 'trocou' }))).toEqual([]);
+    expect(rotulos(aula({ origem: 'troca_pendente' }))).toEqual([]);
+    expect(
+      rotulos(aula({ origem: 'turma', swap_status: 'pending', swap_role: 'origem' })),
+    ).toEqual([]);
+  });
+
+  it('com a troca negada, a aula volta a ter as ações da linha', () => {
+    expect(
+      rotulos(aula({ origem: 'turma', swap_status: 'rejected', swap_role: 'origem' })),
+    ).toEqual(['Vou', 'Não vou']);
+  });
+});
+
+describe('declararAula e avisoDeCota', () => {
+  it('chama declarar_aula e lê a resposta', async () => {
+    const chamadas: unknown[] = [];
+    const cliente = {
+      rpc: async (nome: string, parametros: unknown) => {
+        chamadas.push([nome, parametros]);
+        return { data: { marcadas_na_semana: 3, cota: 2, acima_da_cota: true }, error: null };
+      },
+    } as unknown as SupabaseClient;
+
+    const declaracao = await declararAula(cliente, 'aula-1', true);
+
+    expect(chamadas).toEqual([['declarar_aula', { p_class_id: 'aula-1', p_vou: true }]]);
+    expect(declaracao).toEqual({ marcadasNaSemana: 3, cota: 2, acimaDaCota: true });
+    expect(avisoDeCota(declaracao)).toBe(
+      'Você marcou 3 aulas nesta semana e seu plano é 2x. Pode ir: fica registrado acima do plano.',
+    );
+  });
+
+  it('repassa a recusa do banco, com o código e a frase', async () => {
+    const recusa = { code: '23514', message: 'Você já marcou outra aula neste horário.' };
+    const cliente = {
+      rpc: async () => ({ data: null, error: recusa }),
+    } as unknown as SupabaseClient;
+
+    await expect(declararAula(cliente, 'aula-1', true)).rejects.toBe(recusa);
+  });
+
+  it('sem aviso dentro da cota ou no à vontade (cota nula)', () => {
+    expect(avisoDeCota({ marcadasNaSemana: 2, cota: 3, acimaDaCota: false })).toBeNull();
+    expect(avisoDeCota({ marcadasNaSemana: 9, cota: null, acimaDaCota: false })).toBeNull();
   });
 });
