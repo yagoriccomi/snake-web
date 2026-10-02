@@ -1,0 +1,34 @@
+/* Bloco de contato e botões do contato da academia. Só tokens de tema. */
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+}
+
+.frase {
+  margin: 0;
+  font-size: 14px;
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.botao {
+  min-height: var(--hit);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--primary-text);
+  font-weight: 600;
+  text-decoration: none;
+}

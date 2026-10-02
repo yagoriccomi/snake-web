@@ -34,7 +34,11 @@ export default function PaginaDePagamento({
   params: Promise<{ id: string }>;
 }): React.JSX.Element {
   const { id } = use(params);
-  return <Protegida etapa="aluno">{() => <Pagamento id={id} />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="inicio">
+      {() => <Pagamento id={id} />}
+    </Protegida>
+  );
 }
 
 function Pagamento({ id }: { id: string }): React.JSX.Element {

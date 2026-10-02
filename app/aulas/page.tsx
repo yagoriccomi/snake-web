@@ -26,7 +26,11 @@ const UM_DIA_EM_MS = 24 * 60 * 60 * 1000;
  * chamada. A tela diz isso, para ninguém achar que avisar já conta.
  */
 export default function PaginaDeAulas(): React.JSX.Element {
-  return <Protegida etapa="aluno">{() => <Aulas />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="aulas">
+      {() => <Aulas />}
+    </Protegida>
+  );
 }
 
 function Aulas(): React.JSX.Element {
@@ -79,9 +83,6 @@ function Aulas(): React.JSX.Element {
   return (
     <main className={estilos.pagina}>
       <header>
-        <a className={estilos.link} href="/inicio">
-          ← Início
-        </a>
         <h1 className={estilos.titulo}>Aulas</h1>
         <p className={estilos.texto}>
           Marcar é intenção: a presença vale pela chamada do professor.

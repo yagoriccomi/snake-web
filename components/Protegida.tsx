@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { MolduraLogada, type Secao } from '@/components/MolduraLogada';
 import { verificarAcesso, type Acesso, type Etapa } from '@/lib/guarda';
 import { supabase } from '@/lib/supabase';
 
@@ -17,12 +18,17 @@ export type UsuarioLiberado = Extract<Acesso, { situacao: 'liberado' }>['usuario
  *
  * Nenhum dado da página é buscado antes do guarda terminar — é isso que impede
  * a frequência de aparecer, por um instante, para quem ainda deve o aceite.
+ *
+ * Na etapa do aluno, a página ganha o cabeçalho (5.1) e o rodapé com "Falar
+ * com a academia" (6.15); `secao` diz qual item do cabeçalho fica marcado.
  */
 export function Protegida({
   etapa,
+  secao,
   children,
 }: {
   etapa: Etapa;
+  secao?: Secao;
   children: (usuario: UsuarioLiberado) => React.ReactNode;
 }): React.JSX.Element {
   const router = useRouter();
@@ -80,5 +86,6 @@ export function Protegida({
     );
   }
 
-  return <>{children(acesso.usuario)}</>;
+  if (etapa !== 'aluno') return <>{children(acesso.usuario)}</>;
+  return <MolduraLogada secao={secao}>{children(acesso.usuario)}</MolduraLogada>;
 }

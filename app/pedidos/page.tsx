@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { Protegida } from '@/components/Protegida';
 import { formatarDiaEHora } from '@/lib/aulas';
@@ -33,7 +34,11 @@ type Estado = 'carregando' | 'pronto' | 'erro';
  * fica sabendo da decisão.
  */
 export default function PaginaDePedidos(): React.JSX.Element {
-  return <Protegida etapa="aluno">{() => <Pedidos />}</Protegida>;
+  return (
+    <Protegida etapa="aluno" secao="aulas">
+      {() => <Pedidos />}
+    </Protegida>
+  );
 }
 
 function Pedidos(): React.JSX.Element {
@@ -134,6 +139,7 @@ function Pedidos(): React.JSX.Element {
                 <p className={estilos.estado} data-situacao={troca.situacao}>
                   {rotuloDaTroca(troca)}
                 </p>
+                {troca.situacao === 'rejected' ? <BlocoDeContato /> : null}
                 {troca.podeDesistir && desistindo !== troca.id ? (
                   <button
                     className={estilos.botaoLink}
@@ -173,6 +179,7 @@ function Pedidos(): React.JSX.Element {
                 <p className={estilos.estado} data-situacao={pedido.situacao}>
                   {rotuloDoPedido(pedido)}
                 </p>
+                {pedido.situacao === 'rejected' ? <BlocoDeContato /> : null}
               </li>
             ))}
           </ul>

@@ -22,15 +22,6 @@
   color: var(--primary-text);
 }
 
-.sair {
-  min-height: var(--hit);
-  padding: 0 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-}
 
 .bloco {
   display: flex;
