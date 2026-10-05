@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Protegida } from '@/components/Protegida';
+import { mensagemDaFalha } from '@/lib/erros';
 import {
   aceitarDocumentos,
   buscarDocumentosComTexto,
@@ -73,8 +74,8 @@ function Termos(): React.JSX.Element {
     try {
       await aceitarDocumentos(pendentes.map((documento) => documento.id));
       window.location.href = '/inicio';
-    } catch {
-      setErro('Não foi possível registrar seu aceite. Verifique a conexão e tente de novo.');
+    } catch (falha) {
+      setErro(mensagemDaFalha(falha, 'registrar seu aceite'));
       setEnviando(false);
     }
   }, [pendentes]);

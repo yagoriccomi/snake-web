@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { fraseDaRecusa } from '@/lib/erros';
+import { mensagemDaFalha } from '@/lib/erros';
 import {
   definirMetaSemanal,
   META_MAXIMA,
@@ -14,8 +14,6 @@ import {
 import { supabase } from '@/lib/supabase';
 
 import estilos from './FolhaDaMeta.module.css';
-
-const FRASE_DE_CONEXAO = 'Não foi possível salvar. Verifique a conexão e tente de novo.';
 
 /**
  * "Meta da próxima semana" do à vontade, com os textos e a faixa do app
@@ -43,7 +41,7 @@ export function FolhaDaMeta({
     try {
       onSalva(await definirMetaSemanal(supabase, meta));
     } catch (falha) {
-      setErro(fraseDaRecusa(falha) ?? FRASE_DE_CONEXAO);
+      setErro(mensagemDaFalha(falha, 'salvar'));
     } finally {
       setSalvando(false);
     }

@@ -23,6 +23,7 @@ import {
   ROTULO_DA_SITUACAO,
   type Mensalidade,
 } from '@/lib/dados';
+import { mensagemDaFalha } from '@/lib/erros';
 import { buscarMetaDaSemana, proximaSegunda, textoDaMudanca } from '@/lib/meta';
 import {
   buscarFrequenciaDaSemana,
@@ -90,8 +91,8 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
     setErroDaMeta(null);
     try {
       setMetaDaProxima(await buscarMetaDaSemana(supabase, usuario.id, proximaSegunda(new Date())));
-    } catch {
-      setErroDaMeta('Não foi possível abrir a meta. Verifique a conexão e tente de novo.');
+    } catch (falha) {
+      setErroDaMeta(mensagemDaFalha(falha, 'abrir a meta'));
     }
   };
 

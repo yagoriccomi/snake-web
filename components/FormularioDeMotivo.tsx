@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 
-import { mensagemDaJustificativa } from '@/lib/erros';
+import { mensagemDaFalha } from '@/lib/erros';
 import { TAMANHO_MAXIMO_DA_JUSTIFICATIVA } from '@/lib/justificativas';
 
 import estilos from './FormularioDeMotivo.module.css';
@@ -48,7 +48,7 @@ export function FormularioDeMotivo({
     try {
       await onEnviar(texto);
     } catch (falha) {
-      setErro(mensagemDaJustificativa(falha));
+      setErro(mensagemDaFalha(falha, 'enviar'));
     } finally {
       setEnviando(false);
     }
