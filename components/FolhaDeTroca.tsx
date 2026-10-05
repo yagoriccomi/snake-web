@@ -3,7 +3,7 @@
 import { useId, useState } from 'react';
 
 import { formatarDiaEHora, type AulaDoAluno } from '@/lib/aulas';
-import { mensagemDaJustificativa } from '@/lib/erros';
+import { mensagemDaFalha } from '@/lib/erros';
 import {
   ehReposicao,
   opcoesDeOrigem,
@@ -64,7 +64,7 @@ export function FolhaDeTroca({
         justificativa: tipo === 'permanent' ? justificativa : undefined,
       });
     } catch (falha) {
-      setErro(mensagemDaJustificativa(falha));
+      setErro(mensagemDaFalha(falha, 'enviar'));
     } finally {
       setEnviando(false);
     }

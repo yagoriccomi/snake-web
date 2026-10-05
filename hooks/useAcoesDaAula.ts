@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 
 import { avisoDeCota, declararAula, type AcaoDeDeclarar, type AulaDoAluno } from '@/lib/aulas';
-import { mensagemDoAviso } from '@/lib/erros';
+import { mensagemDaFalha } from '@/lib/erros';
 import { enviarJustificativa } from '@/lib/justificativas';
 import { PEDIDO_ENVIADO, pedirEuEstavaNaAula } from '@/lib/solicitacoes';
 import {
@@ -91,7 +91,7 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
         }
         await recarregar();
       } catch (falha) {
-        setErro(mensagemDoAviso(falha));
+        setErro(mensagemDaFalha(falha, 'avisar'));
       } finally {
         setOcupado(false);
       }
@@ -109,7 +109,7 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
       setRecado(RECADO_DA_ACAO.Desmarcar);
       await recarregar();
     } catch (falha) {
-      setErro(mensagemDoAviso(falha));
+      setErro(mensagemDaFalha(falha, 'avisar'));
     } finally {
       setOcupado(false);
     }

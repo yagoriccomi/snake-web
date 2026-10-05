@@ -2,12 +2,10 @@
 
 import { useId, useState } from 'react';
 
-import { fraseDaRecusa } from '@/lib/erros';
+import { mensagemDaFalha } from '@/lib/erros';
 import { TEXTOS_DA_TROCA } from '@/lib/trocas';
 
 import estilos from './ConfirmarDesistencia.module.css';
-
-const FRASE_DE_CONEXAO = 'Não foi possível desistir. Verifique a conexão e tente de novo.';
 
 /**
  * Confirma **Desistir da troca** (§ 9.4, T36), como a folha do app: não tem
@@ -33,7 +31,7 @@ export function ConfirmarDesistencia({
     try {
       await onDesistir();
     } catch (falha) {
-      setErro(fraseDaRecusa(falha) ?? FRASE_DE_CONEXAO);
+      setErro(mensagemDaFalha(falha, 'desistir'));
     } finally {
       setEnviando(false);
     }

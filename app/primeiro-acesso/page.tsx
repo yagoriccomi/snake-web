@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Protegida } from '@/components/Protegida';
+import { mensagemDaFalha } from '@/lib/erros';
 import { concluirPrimeiroAcesso, SENHA_IGUAL } from '@/lib/primeiroAcesso';
 import { supabase } from '@/lib/supabase';
 import {
@@ -136,7 +137,7 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
         setErro(
           senhaIgual
             ? 'A nova senha precisa ser diferente da anterior.'
-            : 'Não foi possível concluir. Verifique a conexão e tente de novo.',
+            : mensagemDaFalha(falha, 'concluir'),
         );
         setSalvando(false);
       }
