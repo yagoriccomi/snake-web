@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+
+import { FolhaDeTroca } from '@/components/FolhaDeTroca';
 
 import { lerAulaDoAluno, type AulaDoAluno } from '@/lib/aulas';
 import { ErroDeValidacao } from '@/lib/erros';
@@ -10,10 +14,15 @@ import {
   ehReposicao,
   opcoesDeOrigem,
   pedirTroca,
+  recadoDaTroca,
   rotuloDaTroca,
   textoDoFimDoHorario,
   tiposPossiveis,
 } from '@/lib/trocas';
+
+vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getSession: vi.fn() } } }));
+
+const nada = (): Promise<void> => Promise.resolve();
 
 function aula(id: string, extra: Record<string, unknown> = {}): AulaDoAluno {
   return lerAulaDoAluno({
@@ -26,7 +35,7 @@ function aula(id: string, extra: Record<string, unknown> = {}): AulaDoAluno {
 }
 
 function cliente(respostas: Record<string, { data: unknown; error: unknown }>) {
-  const chamadas: unknown[] = [];
+  const chamadas: [string, unknown][] = [];
   const falso = {
     rpc: async (nome: string, parametros?: unknown) => {
       chamadas.push([nome, parametros]);
@@ -71,51 +80,106 @@ describe('folha Trocar aula (6.13)', () => {
     expect(textoDoFimDoHorario('2026-12-19')).toBe('Este horário termina em 19/12.');
   });
 
-  it('avulsa: só pedir_troca_de_aula, sem motivo', async () => {
+  it('avulsa: só pedir_troca_de_aula, sem motivo nem etapas', async () => {
     const { falso, chamadas } = cliente({ pedir_troca_de_aula: { data: 'troca-1', error: null } });
+    const aoConcluir = vi.fn(nada);
 
-    expect(await pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'once' })).toBe('troca-1');
+    expect(await pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'once' }, aoConcluir)).toBeUndefined();
     expect(chamadas).toEqual([
       ['pedir_troca_de_aula', { p_de: 'a', p_para: 'nova', p_tipo: 'once', p_motivo_id: null }],
     ]);
+    expect(aoConcluir).toHaveBeenCalledWith(false);
   });
 
-  it('permanente: o motivo class_swap_evidence sem aula e depois o pedido com ele', async () => {
+  it('permanente: o motivo class_swap_evidence sem aula, e o pedido com ele só ao concluir', async () => {
     const { falso, chamadas } = cliente({
       criar_motivo: { data: 'motivo-1', error: null },
       pedir_troca_de_aula: { data: 'troca-2', error: null },
     });
+    const aoConcluir = vi.fn(nada);
 
-    await pedirTroca(falso, {
-      de: 'a',
-      para: 'nova',
-      tipo: 'permanent',
-      justificativa: '  Mudei de turno no trabalho.  ',
-    });
-
+    const etapas = await pedirTroca(
+      falso,
+      { de: 'a', para: 'nova', tipo: 'permanent', justificativa: '  Mudei de turno no trabalho.  ' },
+      aoConcluir,
+    );
     expect(chamadas).toEqual([
       ['criar_motivo', { p_kind: 'class_swap_evidence', p_class_id: null, p_texto: 'Mudei de turno no trabalho.' }],
-      [
-        'pedir_troca_de_aula',
-        { p_de: 'a', p_para: 'nova', p_tipo: 'permanent', p_motivo_id: 'motivo-1' },
-      ],
     ]);
+
+    await etapas?.concluir(true);
+
+    expect(chamadas[1]).toEqual([
+      'pedir_troca_de_aula',
+      { p_de: 'a', p_para: 'nova', p_tipo: 'permanent', p_motivo_id: 'motivo-1' },
+    ]);
+    expect(aoConcluir).toHaveBeenCalledWith(true);
+  });
+
+  it('o "Tentar de novo" depois da troca pedida não pede uma segunda', async () => {
+    const { falso, chamadas } = cliente({
+      criar_motivo: { data: 'motivo-1', error: null },
+      pedir_troca_de_aula: { data: 'troca-2', error: null },
+    });
+    const aoConcluir = vi
+      .fn<(faltouAnexo: boolean) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('falhou ao recarregar'))
+      .mockResolvedValueOnce(undefined);
+
+    const etapas = await pedirTroca(
+      falso,
+      { de: 'a', para: 'nova', tipo: 'permanent', justificativa: 'Mudei de turno.' },
+      aoConcluir,
+    );
+    await expect(etapas?.concluir(false)).rejects.toThrow('falhou ao recarregar');
+    await etapas?.concluir(false);
+
+    expect(chamadas.filter(([nome]) => nome === 'pedir_troca_de_aula')).toHaveLength(1);
+    expect(aoConcluir).toHaveBeenCalledTimes(2);
   });
 
   it('permanente sem justificativa não vai ao banco', async () => {
     const { falso, chamadas } = cliente({});
 
     await expect(
-      pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'permanent', justificativa: ' ' }),
+      pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'permanent', justificativa: ' ' }, nada),
     ).rejects.toEqual(new ErroDeValidacao('Para a troca permanente, escreva a justificativa.'));
     expect(chamadas).toEqual([]);
   });
 
-  it('a recusa do banco sobe com a frase dele', async () => {
+  it('a recusa do banco sobe com a frase dele, e a tela não conclui', async () => {
     const recusa = { code: '23514', message: 'Você já tem aula neste horário.' };
     const { falso } = cliente({ pedir_troca_de_aula: { data: null, error: recusa } });
+    const aoConcluir = vi.fn(nada);
 
-    await expect(pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'once' })).rejects.toBe(recusa);
+    await expect(pedirTroca(falso, { de: 'a', para: 'nova', tipo: 'once' }, aoConcluir)).rejects.toBe(
+      recusa,
+    );
+    expect(aoConcluir).not.toHaveBeenCalled();
+  });
+
+  it('o campo de anexo (até 5) aparece só na permanente', () => {
+    const folha = (semana: AulaDoAluno[]): string =>
+      renderToStaticMarkup(
+        createElement(FolhaDeTroca, {
+          nova,
+          semana,
+          onPedir: () => Promise.resolve(),
+          onFechar: () => undefined,
+        }),
+      );
+
+    expect(folha([aula('a', { can_swap_from_permanent: true })])).toContain('Até 5 arquivos.');
+    expect(folha([aula('a', { can_swap_from: true })])).not.toContain('Anexar arquivo');
+  });
+
+  it('o recado diz quando algum anexo da permanente ficou de fora', () => {
+    expect(recadoDaTroca(false)).toBe(
+      'Pedido de troca enviado. A aula nova fica como Troca pendente até a decisão.',
+    );
+    expect(recadoDaTroca(true)).toBe(
+      'Pedido de troca enviado, sem os anexos que falharam. A aula nova fica como Troca pendente até a decisão.',
+    );
   });
 });
 

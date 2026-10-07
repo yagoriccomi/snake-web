@@ -10,6 +10,7 @@ import { pedirEuEstavaNaAula, recadoDoPedido } from '@/lib/solicitacoes';
 import {
   desistirDaTroca,
   pedirTroca as pedirAoBanco,
+  recadoDaTroca,
   TEXTOS_DA_TROCA,
   type PedidoDeTroca,
 } from '@/lib/trocas';
@@ -47,7 +48,7 @@ export interface AcoesDaAula {
   contestar: (classId: string, texto: string) => Promise<EtapasDoEnvio>;
   abrirContestacao: (classId: string) => void;
   abrirTroca: (classId: string) => void;
-  pedirTroca: (pedido: PedidoDeTroca) => Promise<void>;
+  pedirTroca: (pedido: PedidoDeTroca) => Promise<EtapasDoEnvio | void>;
   abrirDesistencia: (classId: string) => void;
   desistir: (trocaId: string) => Promise<void>;
   fecharFormularios: () => void;
@@ -114,7 +115,8 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
     }
   }, [cota, recarregar]);
 
-  // Os dois formulários tratam o próprio erro; aqui só o que vem depois do sucesso.
+  // Os formulários e a folha da troca tratam o próprio erro; aqui só o que vem
+  // depois do sucesso.
   const justificar = useCallback(
     async (classId: string, texto: string) => {
       const id = await enviarJustificativa(supabase, { escopo: 'class', classId, texto });
@@ -150,12 +152,12 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
   }, []);
 
   const pedirTroca = useCallback(
-    async (pedido: PedidoDeTroca) => {
-      await pedirAoBanco(supabase, pedido);
-      setTrocandoAula(null);
-      setRecado(TEXTOS_DA_TROCA.pedida);
-      await recarregar();
-    },
+    (pedido: PedidoDeTroca) =>
+      pedirAoBanco(supabase, pedido, async (faltouAnexo) => {
+        setTrocandoAula(null);
+        setRecado(recadoDaTroca(faltouAnexo));
+        await recarregar();
+      }),
     [recarregar],
   );
 

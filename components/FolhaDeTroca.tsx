@@ -2,8 +2,11 @@
 
 import { useId, useState } from 'react';
 
+import { CampoDeAnexos } from '@/components/CampoDeAnexos';
+import { BotoesDoEnvio, MensagensDoEnvio } from '@/components/EnvioComAnexos';
+import { useEnvioComAnexos } from '@/hooks/useEnvioComAnexos';
+import { MAXIMO_DE_ANEXOS_DO_MOTIVO, type EtapasDoEnvio } from '@/lib/anexos';
 import { formatarDiaEHora, type AulaDoAluno } from '@/lib/aulas';
-import { mensagemDaFalha } from '@/lib/erros';
 import {
   ehReposicao,
   opcoesDeOrigem,
@@ -21,10 +24,9 @@ import estilos from './FolhaDeTroca.module.css';
 /**
  * Folha "Trocar aula" (§ 12.2, § 9.4, prancheta da linha G), aberta pela aula
  * nova: qual aula dele sai, o tipo (Só nesta semana é o padrão) e, na
- * permanente, a justificativa obrigatória. Tudo o que aparece vem das colunas;
- * o banco confere de novo e recusa com a frase dele.
- *
- * Sem anexos na permanente até o G2.
+ * permanente, a justificativa obrigatória com até 5 anexos, no envio em três
+ * tempos (`useEnvioComAnexos`). Tudo o que aparece vem das colunas; o banco
+ * confere de novo e recusa com a frase dele.
  */
 export function FolhaDeTroca({
   nova,
@@ -35,7 +37,8 @@ export function FolhaDeTroca({
   nova: AulaDoAluno;
   /** As aulas da mesma semana (as linhas do menu). */
   semana: readonly AulaDoAluno[];
-  onPedir: (pedido: PedidoDeTroca) => Promise<void>;
+  /** Com anexo (permanente), devolve as etapas seguintes; a avulsa resolve no fim. */
+  onPedir: (pedido: PedidoDeTroca) => Promise<EtapasDoEnvio | void>;
   onFechar: () => void;
 }): React.JSX.Element {
   const grupo = useId();
@@ -44,30 +47,30 @@ export function FolhaDeTroca({
   const opcoes = tipo === null ? [] : opcoesDeOrigem(semana, nova, tipo);
   const [origem, setOrigem] = useState<string | null>(opcoes[0]?.id ?? null);
   const [justificativa, setJustificativa] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [anexos, setAnexos] = useState<File[]>([]);
+  const { fase, enviar, tentarDeNovo, concluir } = useEnvioComAnexos();
+  // Depois do motivo criado, nada do pedido muda: a troca sai com o que foi escrito.
+  const travado = fase.tipo !== 'editando';
+  const semCloudinary = fase.tipo === 'falhaNoAnexo' && fase.indisponivel;
 
   const escolherTipo = (novo: TipoDeTroca): void => {
     setTipo(novo);
     setOrigem(opcoesDeOrigem(semana, nova, novo)[0]?.id ?? null);
   };
 
-  const pedir = async (): Promise<void> => {
+  const pedir = (): void => {
     if (tipo === null || origem === null) return;
-    setEnviando(true);
-    setErro(null);
-    try {
-      await onPedir({
-        de: origem,
-        para: nova.id,
-        tipo,
-        justificativa: tipo === 'permanent' ? justificativa : undefined,
-      });
-    } catch (falha) {
-      setErro(mensagemDaFalha(falha, 'enviar'));
-    } finally {
-      setEnviando(false);
-    }
+    const permanente = tipo === 'permanent';
+    void enviar(
+      () =>
+        onPedir({
+          de: origem,
+          para: nova.id,
+          tipo,
+          justificativa: permanente ? justificativa : undefined,
+        }),
+      permanente ? anexos : [],
+    );
   };
 
   const faltaJustificativa = tipo === 'permanent' && justificativa.trim() === '';
@@ -93,7 +96,7 @@ export function FolhaDeTroca({
                     name={`${grupo}-tipo`}
                     checked={tipo === opcao}
                     onChange={() => escolherTipo(opcao)}
-                    disabled={enviando}
+                    disabled={travado}
                   />
                   {ROTULO_DO_TIPO[opcao]}
                 </label>
@@ -112,7 +115,7 @@ export function FolhaDeTroca({
                   name={`${grupo}-origem`}
                   checked={origem === aula.id}
                   onChange={() => setOrigem(aula.id)}
-                  disabled={enviando}
+                  disabled={travado}
                 />
                 <span className={estilos.descricao}>
                   <span>{`${aula.titulo} · ${formatarDiaEHora(aula.quando)}`}</span>
@@ -140,34 +143,36 @@ export function FolhaDeTroca({
                 maxLength={TAMANHO_MAXIMO_DA_JUSTIFICATIVA_DA_TROCA}
                 rows={3}
                 required
-                disabled={enviando}
+                disabled={travado}
               />
+              {semCloudinary ? null : (
+                <CampoDeAnexos
+                  arquivos={anexos}
+                  maximo={MAXIMO_DE_ANEXOS_DO_MOTIVO}
+                  desabilitado={travado}
+                  onMudar={setAnexos}
+                />
+              )}
               <p className={estilos.aviso}>{TEXTOS_DA_TROCA.avisoDaPermanente}</p>
             </>
           ) : null}
         </>
       )}
 
-      {erro !== null ? (
-        <p className={estilos.erro} role="alert">
-          {erro}
-        </p>
-      ) : null}
+      <MensagensDoEnvio fase={fase} />
 
       <div className={estilos.acoes}>
-        <button className={estilos.secundario} type="button" onClick={onFechar} disabled={enviando}>
-          Voltar
-        </button>
-        {tipo !== null ? (
-          <button
-            className={estilos.primario}
-            type="button"
-            onClick={() => void pedir()}
-            disabled={enviando || origem === null || faltaJustificativa}
-          >
-            {enviando ? 'Enviando…' : 'Pedir troca'}
-          </button>
-        ) : null}
+        <BotoesDoEnvio
+          fase={fase}
+          podeEnviar={origem !== null && !faltaJustificativa}
+          rotuloDoEnvio={tipo === null ? null : 'Pedir troca'}
+          rotuloDoFechar="Voltar"
+          saidaPrimeiro
+          onEnviar={pedir}
+          onTentarDeNovo={(pendentes) => void tentarDeNovo(pendentes)}
+          onConcluir={(faltouAnexo) => void concluir(faltouAnexo)}
+          onFechar={onFechar}
+        />
       </div>
     </section>
   );
