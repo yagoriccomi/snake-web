@@ -1,6 +1,7 @@
 'use client';
 
 import { env } from '@/lib/env';
+import { codigoDoCorpo, mensagemDoServidor } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -55,13 +56,15 @@ async function pedirAssinatura(paymentId: string): Promise<UploadAssinado> {
   }
 
   if (!resposta.ok) {
-    // O servidor hiberna e a primeira chamada do dia demora; um 5xx aqui é
-    // quase sempre isso, e a pessoa precisa saber que vale insistir.
-    const mensagem =
-      resposta.status >= 500
-        ? 'O servidor está acordando. Tente de novo em alguns segundos.'
-        : 'Não foi possível preparar o envio. Tente de novo.';
-    throw new ErroDeEnvio(mensagem);
+    // Um corpo que não é JSON (a Render na frente do servidor, por exemplo)
+    // não tem `code`, e quem decide então é o status.
+    const corpo: unknown = await resposta.json().catch(() => null);
+    throw new ErroDeEnvio(
+      mensagemDoServidor(
+        { status: resposta.status, code: codigoDoCorpo(corpo) },
+        'preparar o envio',
+      ),
+    );
   }
 
   return (await resposta.json()) as UploadAssinado;
