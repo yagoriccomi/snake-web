@@ -80,7 +80,7 @@ function Termos(): React.JSX.Element {
   }, [pendentes]);
 
   if (estado === 'carregando') {
-    return <main className={estilos.aviso}>Carregando os documentos…</main>;
+    return <main className={estilos.aviso} role="status">Carregando os documentos…</main>;
   }
 
   if (estado === 'erro') {

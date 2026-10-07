@@ -112,7 +112,7 @@ function Pagamento({ id }: { id: string }): React.JSX.Element {
   }, [id]);
 
   if (estado === 'carregando') {
-    return <main className={estilos.aviso}>Carregando…</main>;
+    return <main className={estilos.aviso} role="status">Carregando…</main>;
   }
 
   if (estado === 'nao-encontrada') {
@@ -129,7 +129,9 @@ function Pagamento({ id }: { id: string }): React.JSX.Element {
   if (estado === 'enviado') {
     return (
       <main className={estilos.aviso}>
-        <h1 className={estilos.titulo}>Comprovante enviado ✓</h1>
+        <h1 className={estilos.titulo}>
+          Comprovante enviado <span aria-hidden="true">✓</span>
+        </h1>
         <p className={estilos.texto}>
           Seu pagamento está <strong>em análise</strong>. A academia confere e confirma.
         </p>

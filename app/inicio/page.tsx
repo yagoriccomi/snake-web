@@ -60,7 +60,7 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   }, [usuario.id]);
 
   if (estado === 'carregando') {
-    return <main className={estilos.aviso}>Carregando…</main>;
+    return <main className={estilos.aviso} role="status">Carregando…</main>;
   }
 
   if (estado === 'erro') {

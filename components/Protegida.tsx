@@ -44,7 +44,11 @@ export function Protegida({
   }, [etapa, router]);
 
   if (acesso === null) {
-    return <main className={estilos.aviso}>Carregando…</main>;
+    return (
+      <main className={estilos.aviso} role="status">
+        Carregando…
+      </main>
+    );
   }
 
   if (acesso.situacao === 'nao-e-aluno') {
