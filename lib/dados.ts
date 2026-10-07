@@ -1,5 +1,6 @@
 'use client';
 
+import { ErroDeValidacao } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -259,10 +260,12 @@ export async function justificarFalta(
 ): Promise<void> {
   const texto = mensagem.trim();
   if (texto === '') {
-    throw new Error('Escreva o motivo da falta.');
+    throw new ErroDeValidacao('Escreva o motivo da falta.');
   }
   if (texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA) {
-    throw new Error(`A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`);
+    throw new ErroDeValidacao(
+      `A justificativa pode ter até ${TAMANHO_MAXIMO_DA_JUSTIFICATIVA} caracteres.`,
+    );
   }
   const { error } = await supabase
     .from('absence_justifications')
