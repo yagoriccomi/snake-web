@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { codigoDoCorpo, ErroDeValidacao, mensagemDaFalha, mensagemDoServidor } from '@/lib/erros';
+import {
+  codigoDoCorpo,
+  ErroDeValidacao,
+  mensagemDaFalha,
+  mensagemDoServidor,
+  motivoDaFalhaDeLeitura,
+} from '@/lib/erros';
 
 // Frases do contrato v5, como o banco as devolve (`raise exception … using errcode = …`).
 const TROCOU_A_AULA = 'Você trocou esta aula por outra.';
@@ -127,7 +133,44 @@ describe('mensagemDaFalha — não identificada', () => {
   });
 });
 
-const GENERICA_DO_PREPARO = 'Não foi possível preparar o envio. Tente de novo em instantes.';
+const CONEXAO_DA_LEITURA = 'Verifique sua internet e tente de novo.';
+const GENERICA_DA_LEITURA = 'Tente de novo em instantes.';
+
+describe('motivoDaFalhaDeLeitura — o que vem depois de "Não foi possível carregar"', () => {
+  it('mostra a frase do banco quando a leitura é recusada com uma', () => {
+    expect(motivoDaFalhaDeLeitura(erroDoBanco('42501', SO_PARA_ALUNOS))).toBe(SO_PARA_ALUNOS);
+  });
+
+  it('mostra a mensagem própria do código quando o banco não manda frase', () => {
+    expect(
+      motivoDaFalhaDeLeitura(erroDoBanco('42501', 'permission denied for function x')),
+    ).toBe('Você não tem permissão para esta ação.');
+    expect(motivoDaFalhaDeLeitura(erroDoBanco('P0002', ''))).toBe(
+      'Não encontramos o que você pediu. Atualize a página e tente de novo.',
+    );
+  });
+
+  it('pede para conferir a internet só quando a falha é de rede', () => {
+    expect(motivoDaFalhaDeLeitura(ERRO_DE_REDE)).toBe(CONEXAO_DA_LEITURA);
+    expect(motivoDaFalhaDeLeitura(new TypeError('Failed to fetch'))).toBe(CONEXAO_DA_LEITURA);
+  });
+
+  it('cai na genérica, sem falar em internet, quando o SQLSTATE não é conhecido', () => {
+    expect(motivoDaFalhaDeLeitura(erroDoBanco('40001', 'could not serialize access'))).toBe(
+      GENERICA_DA_LEITURA,
+    );
+  });
+
+  it('cai na genérica, sem mostrar a frase, quando um Error comum a traz', () => {
+    expect(motivoDaFalhaDeLeitura(new Error(TROCOU_A_AULA))).toBe(GENERICA_DA_LEITURA);
+  });
+
+  it('cai na genérica quando não há falha, como no perfil que não veio', () => {
+    expect(motivoDaFalhaDeLeitura(null)).toBe(GENERICA_DA_LEITURA);
+  });
+});
+
+const GENERICA_DO_PREPARO ='Não foi possível preparar o envio. Tente de novo em instantes.';
 
 describe('mensagemDoServidor — code da § 13.6', () => {
   it.each([

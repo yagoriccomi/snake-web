@@ -13,7 +13,9 @@ export type Acesso =
   | { situacao: 'liberado'; usuario: { id: string; nome: string | null } }
   | { situacao: 'redirecionar'; para: Rota }
   | { situacao: 'nao-e-aluno' }
-  | { situacao: 'erro' };
+  // A falha segue até a tela, que escolhe a frase pela D20; `null` quando o
+  // banco respondeu sem erro, mas sem o perfil.
+  | { situacao: 'erro'; falha: unknown };
 
 const PAPEL_DO_ALUNO = 'user';
 
@@ -42,7 +44,7 @@ export async function verificarAcesso(cliente: SupabaseClient, etapa: Etapa): Pr
     .eq('id', usuario.id)
     .maybeSingle();
   if (error !== null || perfil === null) {
-    return { situacao: 'erro' };
+    return { situacao: 'erro', falha: error };
   }
 
   if (perfil.role !== PAPEL_DO_ALUNO) {
@@ -69,7 +71,7 @@ export async function verificarAcesso(cliente: SupabaseClient, etapa: Etapa): Pr
     'documentos_legais_pendentes',
   );
   if (erroDosDocumentos !== null) {
-    return { situacao: 'erro' };
+    return { situacao: 'erro', falha: erroDosDocumentos };
   }
   if (Array.isArray(pendentes) && pendentes.length > 0) {
     return { situacao: 'redirecionar', para: '/termos' };

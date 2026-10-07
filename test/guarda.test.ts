@@ -63,10 +63,16 @@ describe('verificarAcesso', () => {
     expect(chamadas).toContain('signOut');
   });
 
-  it.each(ETAPAS)('mostra erro, sem liberar, quando o perfil não carrega (%s)', async (etapa) => {
-    const { cliente } = clienteFalso({ erroNoPerfil: true });
-    expect(await verificarAcesso(cliente, etapa)).toEqual({ situacao: 'erro' });
-  });
+  it.each(ETAPAS)(
+    'mostra erro com a falha, sem liberar, quando o perfil não carrega (%s)',
+    async (etapa) => {
+      const { cliente } = clienteFalso({ erroNoPerfil: true });
+      expect(await verificarAcesso(cliente, etapa)).toEqual({
+        situacao: 'erro',
+        falha: { message: 'rede' },
+      });
+    },
+  );
 
   it('libera /primeiro-acesso para quem ainda não concluiu', async () => {
     const { cliente } = clienteFalso({ perfil: { ...ALUNO, is_first_login: true } });
@@ -103,9 +109,12 @@ describe('verificarAcesso', () => {
     });
   });
 
-  it('mostra erro, sem liberar, quando os documentos não carregam', async () => {
+  it('mostra erro com a falha, sem liberar, quando os documentos não carregam', async () => {
     const { cliente } = clienteFalso({ erroNosDocumentos: true });
-    expect(await verificarAcesso(cliente, 'aluno')).toEqual({ situacao: 'erro' });
+    expect(await verificarAcesso(cliente, 'aluno')).toEqual({
+      situacao: 'erro',
+      falha: { message: 'rede' },
+    });
   });
 
   it('libera o aluno em dia, com o id e o nome', async () => {

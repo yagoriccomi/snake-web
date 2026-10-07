@@ -30,6 +30,11 @@
   line-height: 1.5;
 }
 
+/* Dentro do aviso o espaço vem do gap, como nas outras telas de erro. */
+.aviso .texto {
+  margin: 0;
+}
+
 .dia {
   display: flex;
   flex-direction: column;

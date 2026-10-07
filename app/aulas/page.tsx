@@ -7,6 +7,7 @@ import { AulaComAcoes, AvisoAcimaDaCota, MensagensDasAcoes } from '@/components/
 import { Protegida } from '@/components/Protegida';
 import { useAcoesDaAula } from '@/hooks/useAcoesDaAula';
 import { agruparPorDia, buscarAulasDoAluno, inicioDoDia, type AulaDoAluno } from '@/lib/aulas';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -35,6 +36,7 @@ export default function PaginaDeAulas(): React.JSX.Element {
 
 function Aulas(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   // Aulas de antes de hoje em que ele ainda pode dizer "Eu estava na aula".
   const [paraConferir, setParaConferir] = useState<AulaDoAluno[]>([]);
@@ -51,7 +53,8 @@ function Aulas(): React.JSX.Element {
       setAulas(proximas);
       setParaConferir(passadas.filter((aula) => aula.podeContestar));
       setEstado('pronto');
-    } catch {
+    } catch (falha) {
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
       setEstado('erro');
     }
   }, []);
@@ -73,6 +76,7 @@ function Aulas(): React.JSX.Element {
     return (
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
+        <p className={estilos.texto}>{motivoDaFalha}</p>
         <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
           Tentar de novo
         </button>

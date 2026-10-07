@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
 import { chaveDoDia, diaEMesDoInstante, formatarDiaEHora } from '@/lib/aulas';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   avisoDeMesAberto,
   buscarFrequenciaDoMes,
@@ -56,6 +57,7 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
   const mesAtual = primeiroDiaDoMes(chaveDoDia(new Date()));
   const [mes, setMes] = useState(mesAtual);
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [doMes, setDoMes] = useState<FrequenciaDoMes | null>(null);
   const [semanas, setSemanas] = useState<SemanaDoMes[]>([]);
   const [historico, setHistorico] = useState<AulaDoHistorico[]>([]);
@@ -74,7 +76,8 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
         setSemanas(linhas);
         setHistorico(aulasDoMes);
         setEstado('pronto');
-      } catch {
+      } catch (falha) {
+        setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
         setEstado('erro');
       }
     },
@@ -144,7 +147,7 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
       ) : estado === 'erro' ? (
         <div className={estilos.falha}>
           <p className={estilos.texto} role="alert">
-            Não foi possível carregar. Verifique sua internet e tente de novo.
+            Não foi possível carregar. {motivoDaFalha}
           </p>
           <button className={estilos.botaoSecundario} type="button" onClick={() => irPara(mes)}>
             Tentar de novo

@@ -7,6 +7,7 @@ import { Protegida } from '@/components/Protegida';
 import { ResumoDaSemana } from '@/components/ResumoDaSemana';
 import { useAcoesDaAula } from '@/hooks/useAcoesDaAula';
 import { chaveDoDia, inicioDaSemana, resumoDaSemana, type AulaDoAluno } from '@/lib/aulas';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   buscarDiasDeAula,
   buscarMenuDeAulas,
@@ -45,6 +46,7 @@ export default function PaginaDaSemana(): React.JSX.Element {
 function AulasDaSemana(): React.JSX.Element {
   const [semana, setSemana] = useState<Semana>('esta');
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [aulas, setAulas] = useState<AulaDoAluno[]>([]);
   const [diasDeAula, setDiasDeAula] = useState<number[]>([]);
   const [diaAberto, setDiaAberto] = useState<string | null>(null);
@@ -63,8 +65,10 @@ function AulasDaSemana(): React.JSX.Element {
       setAulas(doMenu);
       setDiasDeAula(dias);
       setEstado('pronto');
-    } catch {
-      if (leitura === ultimaLeitura.current) setEstado('erro');
+    } catch (falha) {
+      if (leitura !== ultimaLeitura.current) return;
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
+      setEstado('erro');
     }
   }, [semana]);
 
@@ -120,7 +124,7 @@ function AulasDaSemana(): React.JSX.Element {
       ) : estado === 'erro' ? (
         <div className={estilos.falha}>
           <p className={estilos.texto} role="alert">
-            Não foi possível carregar. Verifique sua internet e tente de novo.
+            Não foi possível carregar. {motivoDaFalha}
           </p>
           <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
             Tentar de novo

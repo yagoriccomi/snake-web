@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Protegida } from '@/components/Protegida';
-import { mensagemDaFalha } from '@/lib/erros';
+import { mensagemDaFalha, motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   aceitarDocumentos,
   buscarDocumentosComTexto,
@@ -31,6 +31,7 @@ export default function PaginaDeTermos(): React.JSX.Element {
 
 function Termos(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [pendentes, setPendentes] = useState<DocumentoLegal[]>([]);
   const [textos, setTextos] = useState<DocumentoLegal[]>([]);
   const [concordo, setConcordo] = useState(false);
@@ -50,7 +51,8 @@ function Termos(): React.JSX.Element {
       setPendentes(aAceitar);
       setTextos(comTexto.filter((documento) => aAceitar.some((p) => p.id === documento.id)));
       setEstado('pronto');
-    } catch {
+    } catch (falha) {
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
       setEstado('erro');
     }
   }, []);
@@ -88,7 +90,7 @@ function Termos(): React.JSX.Element {
     return (
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
-        <p className={estilos.texto}>Verifique sua internet e tente de novo.</p>
+        <p className={estilos.texto}>{motivoDaFalha}</p>
         <button className={estilos.botaoSecundario} type="button" onClick={tentarDeNovo}>
           Tentar de novo
         </button>

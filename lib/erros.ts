@@ -1,5 +1,5 @@
 /**
- * Que frase o aluno lê quando uma gravação falha.
+ * Que frase o aluno lê quando uma gravação ou uma leitura falha.
  *
  * Regra D20: todo erro identificado tem mensagem própria, e só o não
  * identificado cai na genérica. Mora fora de `lib/dados.ts` para não depender
@@ -148,6 +148,13 @@ function ehFalhaDeRede(falha: unknown): boolean {
   return FALHA_DE_REDE.test(textoDaFalha(falha));
 }
 
+/** A mensagem própria da falha; `null` quando ela não é identificada. */
+function mensagemIdentificada(falha: unknown): string | null {
+  if (falha instanceof ErroDeValidacao) return falha.message;
+  const codigo = campo(falha, 'code');
+  return fraseDoBanco(codigo, campo(falha, 'message')) ?? mensagemDoCodigo(codigo, falha);
+}
+
 /**
  * A frase da tela para uma falha qualquer.
  *
@@ -155,17 +162,30 @@ function ehFalhaDeRede(falha: unknown): boolean {
  * @param acao  O que o aluno tentava fazer, para a frase de conexão e a genérica.
  */
 export function mensagemDaFalha(falha: unknown, acao: AcaoQueFalhou): string {
-  if (falha instanceof ErroDeValidacao) return falha.message;
-
-  const codigo = campo(falha, 'code');
-  const identificada =
-    fraseDoBanco(codigo, campo(falha, 'message')) ?? mensagemDoCodigo(codigo, falha);
+  const identificada = mensagemIdentificada(falha);
   if (identificada !== null) return identificada;
 
   if (ehFalhaDeRede(falha)) {
     return `Não foi possível ${acao}. Verifique a conexão e tente de novo.`;
   }
   return mensagemGenerica(acao);
+}
+
+/**
+ * O que a tela de leitura diz depois de "Não foi possível carregar" (D28).
+ *
+ * Mesma regra da D20, sem repetir o "Não foi possível" que o título ou o
+ * começo da frase já dizem. Só a falha de rede pede para conferir a
+ * internet: mandar conferir a conexão quando o banco recusou seria pista falsa.
+ *
+ * @param falha O que o `catch` da leitura recebeu; `null` quando não há falha a mostrar.
+ */
+export function motivoDaFalhaDeLeitura(falha: unknown): string {
+  const identificada = mensagemIdentificada(falha);
+  if (identificada !== null) return identificada;
+
+  if (ehFalhaDeRede(falha)) return 'Verifique sua internet e tente de novo.';
+  return 'Tente de novo em instantes.';
 }
 
 function mensagemGenerica(acao: AcaoQueFalhou): string {

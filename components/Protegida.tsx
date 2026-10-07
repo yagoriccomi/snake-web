@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { MolduraLogada, type Secao } from '@/components/MolduraLogada';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import { verificarAcesso, type Acesso, type Etapa } from '@/lib/guarda';
 import { supabase } from '@/lib/supabase';
 
@@ -39,7 +40,7 @@ export function Protegida({
   useEffect(() => {
     void (async () => {
       const resultado = await verificarAcesso(supabase, etapa).catch(
-        (): Acesso => ({ situacao: 'erro' }),
+        (falha: unknown): Acesso => ({ situacao: 'erro', falha }),
       );
       if (resultado.situacao === 'redirecionar') {
         router.replace(resultado.para);
@@ -77,7 +78,7 @@ export function Protegida({
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
         <p className={estilos.texto}>
-          Verifique sua internet e tente de novo. Se continuar assim, fale com a academia.
+          {motivoDaFalhaDeLeitura(acesso.falha)} Se continuar assim, fale com a academia.
         </p>
         <button className={estilos.botaoLink} type="button" onClick={() => window.location.reload()}>
           Tentar de novo
