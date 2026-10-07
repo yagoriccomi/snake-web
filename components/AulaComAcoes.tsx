@@ -6,6 +6,7 @@ import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { FolhaDeTroca } from '@/components/FolhaDeTroca';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import type { AcoesDaAula } from '@/hooks/useAcoesDaAula';
+import { MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA } from '@/lib/anexos';
 import {
   acoesDeDeclarar,
   estadoDaAula,
@@ -60,6 +61,7 @@ export function AulaComAcoes({
       {acoes.justificandoAula === aula.id ? (
         <FormularioDeMotivo
           titulo="Justificar a falta"
+          maximoDeAnexos={MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA}
           onEnviar={(texto) => acoes.justificar(aula.id, texto)}
           onFechar={acoes.fecharFormularios}
         />

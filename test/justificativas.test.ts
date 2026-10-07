@@ -7,6 +7,7 @@ import {
   buscarMinhasJustificativas,
   enviarJustificativa,
   NEGADA_PELA_SEGUNDA_VEZ,
+  recadoDaJustificativa,
   reenviarJustificativa,
   rotuloDaJustificativa,
   type MinhaJustificativa,
@@ -171,5 +172,17 @@ describe('rótulos da § 3', () => {
     expect(
       assuntoDaJustificativa(justificativa({ escopo: 'week', quandoDaAula: null, tituloDaAula: null })),
     ).toBe('Semana de 21/09');
+  });
+});
+
+describe('recadoDaJustificativa', () => {
+  it('enviada com o anexo', () => {
+    expect(recadoDaJustificativa('enviada', false)).toBe('Justificativa enviada. A academia vai analisar.');
+  });
+
+  it('reenviada sem o anexo diz que o anexo ficou de fora', () => {
+    expect(recadoDaJustificativa('reenviada', true)).toBe(
+      'Justificativa reenviada, sem o anexo. A academia vai analisar.',
+    );
   });
 });

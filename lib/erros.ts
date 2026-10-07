@@ -120,6 +120,17 @@ export class ErroDeValidacao extends Error {
   }
 }
 
+/**
+ * Falha do envio de arquivo (assinatura ou Cloudinary), já com a frase da
+ * tela — sem detalhe técnico.
+ */
+export class ErroDeEnvio extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = 'ErroDeEnvio';
+  }
+}
+
 /** Lê um campo de texto de um erro de forma desconhecida; vazio quando não há. */
 function campo(falha: unknown, nome: string): string {
   if (typeof falha !== 'object' || falha === null) return '';
@@ -150,7 +161,7 @@ function ehFalhaDeRede(falha: unknown): boolean {
 
 /** A mensagem própria da falha; `null` quando ela não é identificada. */
 function mensagemIdentificada(falha: unknown): string | null {
-  if (falha instanceof ErroDeValidacao) return falha.message;
+  if (falha instanceof ErroDeValidacao || falha instanceof ErroDeEnvio) return falha.message;
   const codigo = campo(falha, 'code');
   return fraseDoBanco(codigo, campo(falha, 'message')) ?? mensagemDoCodigo(codigo, falha);
 }
