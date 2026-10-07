@@ -6,7 +6,7 @@ import { etapasDaJustificativa, type EtapasDoEnvio } from '@/lib/anexos';
 import { avisoDeCota, declararAula, type AcaoDeDeclarar, type AulaDoAluno } from '@/lib/aulas';
 import { mensagemDaFalha } from '@/lib/erros';
 import { enviarJustificativa, recadoDaJustificativa } from '@/lib/justificativas';
-import { PEDIDO_ENVIADO, pedirEuEstavaNaAula } from '@/lib/solicitacoes';
+import { pedirEuEstavaNaAula, recadoDoPedido } from '@/lib/solicitacoes';
 import {
   desistirDaTroca,
   pedirTroca as pedirAoBanco,
@@ -44,7 +44,7 @@ export interface AcoesDaAula {
   declarar: (aula: AulaDoAluno, acao: AcaoDeDeclarar) => Promise<void>;
   desfazerAcimaDaCota: () => Promise<void>;
   justificar: (classId: string, texto: string) => Promise<EtapasDoEnvio>;
-  contestar: (classId: string, texto: string) => Promise<void>;
+  contestar: (classId: string, texto: string) => Promise<EtapasDoEnvio>;
   abrirContestacao: (classId: string) => void;
   abrirTroca: (classId: string) => void;
   pedirTroca: (pedido: PedidoDeTroca) => Promise<void>;
@@ -128,12 +128,12 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
   );
 
   const contestar = useCallback(
-    async (classId: string, texto: string) => {
-      await pedirEuEstavaNaAula(supabase, classId, texto);
-      setContestandoAula(null);
-      setRecado(PEDIDO_ENVIADO);
-      await recarregar();
-    },
+    (classId: string, texto: string) =>
+      pedirEuEstavaNaAula(supabase, classId, texto, async (faltouAnexo) => {
+        setContestandoAula(null);
+        setRecado(recadoDoPedido(faltouAnexo));
+        await recarregar();
+      }),
     [recarregar],
   );
 
