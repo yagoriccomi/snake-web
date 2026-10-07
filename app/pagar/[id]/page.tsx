@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 
+import { Protegida } from '@/components/Protegida';
 import {
   enviarComprovante,
   ErroDeEnvio,
@@ -33,6 +34,10 @@ export default function PaginaDePagamento({
   params: Promise<{ id: string }>;
 }): React.JSX.Element {
   const { id } = use(params);
+  return <Protegida etapa="aluno">{() => <Pagamento id={id} />}</Protegida>;
+}
+
+function Pagamento({ id }: { id: string }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
   const [mensalidade, setMensalidade] = useState<Mensalidade | null>(null);
   const [chavePix, setChavePix] = useState<string | null>(null);
@@ -42,11 +47,6 @@ export default function PaginaDePagamento({
 
   useEffect(() => {
     void (async () => {
-      const { data: sessao } = await supabase.auth.getSession();
-      if (sessao.session === null) {
-        window.location.href = '/';
-        return;
-      }
       const [{ data: pagamento }, { data: config }] = await Promise.all([
         supabase
           .from('payments')
