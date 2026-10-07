@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { CampoDeAnexos, dicaDosAnexos, juntarAnexos } from '@/components/CampoDeAnexos';
-import { avisoDosAnexos } from '@/components/FormularioDeMotivo';
+import { avisoDosAnexos } from '@/components/EnvioComAnexos';
 import {
   anexarAJustificativa,
   enviarAnexos,

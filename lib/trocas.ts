@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { EtapasDoEnvio } from '@/lib/anexos';
 import { formatarDiaEHora, type AulaDoAluno } from '@/lib/aulas';
 import { ErroDeValidacao } from '@/lib/erros';
+import { criarMotivo, etapasDoMotivo } from '@/lib/motivos';
 
 /**
  * Troca de aula (contrato § 9.4, D44–D47): a folha "Trocar aula" sai da aula
@@ -9,8 +11,6 @@ import { ErroDeValidacao } from '@/lib/erros';
  * `can_swap_from_permanent`, `can_swap_to`, `is_recurring`); as recusas, do
  * banco, com a frase dele. Textos da § 3, os mesmos do app
  * (`snake-thai/src/utils/trocas.ts`).
- *
- * Os anexos da troca permanente esperam o G2 (rota `motivos/sign-upload`).
  */
 
 export type TipoDeTroca = 'once' | 'permanent';
@@ -27,6 +27,8 @@ export const TEXTOS_DA_TROCA = {
     'A troca permanente muda a sua grade a partir da próxima aula depois da aprovação.',
   semOpcao: 'Nenhuma aula sua nesta semana pode ser trocada por esta.',
   pedida: 'Pedido de troca enviado. A aula nova fica como Troca pendente até a decisão.',
+  pedidaSemAnexos:
+    'Pedido de troca enviado, sem os anexos que falharam. A aula nova fica como Troca pendente até a decisão.',
   desistiu: 'Você desistiu da troca.',
   confirmarDesistencia: 'Você volta a ter a aula original, e a troca não pode ser retomada.',
 } as const;
@@ -76,29 +78,17 @@ export interface PedidoDeTroca {
   justificativa?: string;
 }
 
-/**
- * Avulsa: só o pedido. Permanente, nesta ordem (§ 9.4): o motivo
- * `class_swap_evidence` com a justificativa, e o pedido com ele.
- */
-export async function pedirTroca(cliente: SupabaseClient, pedido: PedidoDeTroca): Promise<string> {
-  let motivoId: string | null = null;
-  if (pedido.tipo === 'permanent') {
-    const texto = (pedido.justificativa ?? '').trim();
-    if (texto === '' || texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA_DA_TROCA) {
-      throw new ErroDeValidacao(JUSTIFICATIVA_OBRIGATORIA);
-    }
-    const motivo = await cliente.rpc('criar_motivo', {
-      p_kind: 'class_swap_evidence',
-      p_class_id: null,
-      p_texto: texto,
-    });
-    if (motivo.error !== null) {
-      throw motivo.error;
-    }
-    motivoId = String(motivo.data);
-  }
+/** O recado do fim; avisa quando algum anexo da permanente ficou de fora. */
+export function recadoDaTroca(faltouAnexo: boolean): string {
+  return faltouAnexo ? TEXTOS_DA_TROCA.pedidaSemAnexos : TEXTOS_DA_TROCA.pedida;
+}
 
-  const { data, error } = await cliente.rpc('pedir_troca_de_aula', {
+async function registrarTroca(
+  cliente: SupabaseClient,
+  pedido: PedidoDeTroca,
+  motivoId: string | null,
+): Promise<void> {
+  const { error } = await cliente.rpc('pedir_troca_de_aula', {
     p_de: pedido.de,
     p_para: pedido.para,
     p_tipo: pedido.tipo,
@@ -107,7 +97,42 @@ export async function pedirTroca(cliente: SupabaseClient, pedido: PedidoDeTroca)
   if (error !== null) {
     throw error;
   }
-  return String(data);
+}
+
+/**
+ * Avulsa: só o pedido, e a troca já acabou (sem etapas). Permanente, nesta
+ * ordem (§ 9.4): o motivo `class_swap_evidence` com a justificativa, e as
+ * etapas devolvidas anexam até 5 arquivos e só então pedem a troca com ele.
+ *
+ * @param aoConcluir O que a tela faz com a troca pedida (recado, recarregar).
+ */
+export async function pedirTroca(
+  cliente: SupabaseClient,
+  pedido: PedidoDeTroca,
+  aoConcluir: (faltouAnexo: boolean) => Promise<void>,
+): Promise<EtapasDoEnvio | void> {
+  if (pedido.tipo === 'once') {
+    await registrarTroca(cliente, pedido, null);
+    await aoConcluir(false);
+    return;
+  }
+
+  const texto = (pedido.justificativa ?? '').trim();
+  if (texto === '' || texto.length > TAMANHO_MAXIMO_DA_JUSTIFICATIVA_DA_TROCA) {
+    throw new ErroDeValidacao(JUSTIFICATIVA_OBRIGATORIA);
+  }
+  const motivoId = await criarMotivo(cliente, { tipo: 'class_swap_evidence', classId: null, texto });
+
+  // Se a troca foi pedida e o passo seguinte da tela falhou, o "Tentar de
+  // novo" não pode pedir de novo com o mesmo motivo.
+  let pedida = false;
+  return etapasDoMotivo(cliente, motivoId, async (faltouAnexo) => {
+    if (!pedida) {
+      await registrarTroca(cliente, pedido, motivoId);
+      pedida = true;
+    }
+    await aoConcluir(faltouAnexo);
+  });
 }
 
 /** Desfaz a troca pendente, ou a avulsa aprovada antes das duas aulas (T36). */
