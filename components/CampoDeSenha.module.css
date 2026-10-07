@@ -1,0 +1,52 @@
+.envoltorio {
+  position: relative;
+  display: flex;
+}
+
+/* O texto não pode correr por baixo do olho. Dois seletores para vencer o
+   `padding` da classe da página, qualquer que seja a ordem dos CSS no pacote. */
+.envoltorio .entrada {
+  flex: 1;
+  min-width: 0;
+  padding-right: calc(var(--hit) + 4px);
+}
+
+.olho {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: var(--hit);
+  height: var(--hit);
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.olho:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+/* Por dentro do botão: por fora, o contorno sumiria sob a borda do campo. */
+.olho:focus-visible {
+  outline-offset: -4px;
+}
+
+.olho:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.icone {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
