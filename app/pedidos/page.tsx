@@ -6,6 +6,7 @@ import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { Protegida } from '@/components/Protegida';
 import { formatarDiaEHora } from '@/lib/aulas';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   buscarMinhasSolicitacoes,
   rotuloDoPedido,
@@ -43,6 +44,7 @@ export default function PaginaDePedidos(): React.JSX.Element {
 
 function Pedidos(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [trocas, setTrocas] = useState<MinhaTroca[]>([]);
   const [pedidos, setPedidos] = useState<MinhaSolicitacao[]>([]);
   const [desistindo, setDesistindo] = useState<string | null>(null);
@@ -57,7 +59,8 @@ function Pedidos(): React.JSX.Element {
       setTrocas(minhasTrocas);
       setPedidos(solicitacoes);
       setEstado('pronto');
-    } catch {
+    } catch (falha) {
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
       setEstado('erro');
     }
   }, []);
@@ -88,7 +91,7 @@ function Pedidos(): React.JSX.Element {
     return (
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
-        <p className={estilos.texto}>Verifique sua internet e tente de novo.</p>
+        <p className={estilos.texto}>{motivoDaFalha}</p>
         <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
           Tentar de novo
         </button>

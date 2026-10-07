@@ -6,6 +6,7 @@ import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
 import { diaEMesDoInstante } from '@/lib/aulas';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   assuntoDaJustificativa,
   buscarMinhasJustificativas,
@@ -35,6 +36,7 @@ export default function PaginaDeJustificativas(): React.JSX.Element {
 
 function Justificativas(): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [lista, setLista] = useState<MinhaJustificativa[]>([]);
   const [reenviando, setReenviando] = useState<string | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
@@ -43,7 +45,8 @@ function Justificativas(): React.JSX.Element {
     try {
       setLista(await buscarMinhasJustificativas(supabase));
       setEstado('pronto');
-    } catch {
+    } catch (falha) {
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
       setEstado('erro');
     }
   }, []);
@@ -74,7 +77,7 @@ function Justificativas(): React.JSX.Element {
     return (
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
-        <p className={estilos.texto}>Verifique sua internet e tente de novo.</p>
+        <p className={estilos.texto}>{motivoDaFalha}</p>
         <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
           Tentar de novo
         </button>

@@ -6,6 +6,7 @@ import { useId, useState } from 'react';
 import { BotoesDeContato } from '@/components/BlocoDeContato';
 import { useContatoDaAcademia } from '@/hooks/useContatoDaAcademia';
 import { temContato, TEXTOS_DO_CONTATO } from '@/lib/contato';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './MolduraLogada.module.css';
@@ -88,7 +89,7 @@ function RodapeDeContato(): React.JSX.Element {
             </p>
           ) : estado.situacao === 'erro' ? (
             <p className={estilos.texto} role="alert">
-              Não foi possível carregar o contato. Verifique sua internet e tente de novo.
+              Não foi possível carregar o contato. {motivoDaFalhaDeLeitura(estado.falha)}
             </p>
           ) : temContato(estado.contato) ? (
             <BotoesDeContato contato={estado.contato} />

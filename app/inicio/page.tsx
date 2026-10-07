@@ -23,7 +23,7 @@ import {
   ROTULO_DA_SITUACAO,
   type Mensalidade,
 } from '@/lib/dados';
-import { mensagemDaFalha } from '@/lib/erros';
+import { mensagemDaFalha, motivoDaFalhaDeLeitura } from '@/lib/erros';
 import { buscarMetaDaSemana, proximaSegunda, textoDaMudanca } from '@/lib/meta';
 import {
   buscarFrequenciaDaSemana,
@@ -51,6 +51,7 @@ export default function PaginaInicial(): React.JSX.Element {
 
 function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
   const [estado, setEstado] = useState<Estado>('carregando');
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const [semana, setSemana] = useState<FrequenciaDaSemana | null>(null);
   const [mes, setMes] = useState<FrequenciaDoMes | null>(null);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
@@ -80,7 +81,8 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
         setAulas(proximas.slice(0, AULAS_NA_INICIAL));
         setResumo(resumoDaSemana(aulasDaSemana));
         setEstado('pronto');
-      } catch {
+      } catch (falha) {
+        setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
         setEstado('erro');
       }
     })();
@@ -105,7 +107,7 @@ function Inicio({ usuario }: { usuario: UsuarioLiberado }): React.JSX.Element {
       <main className={estilos.aviso}>
         <h1 className={estilos.titulo}>Não foi possível carregar</h1>
         <p className={estilos.texto}>
-          Verifique sua internet e tente de novo. Se continuar assim, fale com a academia.
+          {motivoDaFalha} Se continuar assim, fale com a academia.
         </p>
         <button className={estilos.botaoLink} type="button" onClick={() => window.location.reload()}>
           Tentar de novo

@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 export type EstadoDoContato =
   | { situacao: 'carregando' }
   | { situacao: 'pronto'; contato: ContatoDaAcademia }
-  | { situacao: 'erro' };
+  | { situacao: 'erro'; falha: unknown };
 
 /**
  * O contato é da academia, igual para todos: uma leitura por página aberta
@@ -34,8 +34,8 @@ export function useContatoDaAcademia(): EstadoDoContato {
       (contato) => {
         if (ativo) setEstado({ situacao: 'pronto', contato });
       },
-      () => {
-        if (ativo) setEstado({ situacao: 'erro' });
+      (falha: unknown) => {
+        if (ativo) setEstado({ situacao: 'erro', falha });
       },
     );
     return () => {
