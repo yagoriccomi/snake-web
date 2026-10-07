@@ -13,6 +13,7 @@ import {
   type Aula,
   type Justificativa,
 } from '@/lib/dados';
+import { mensagemDaJustificativa, mensagemDoAviso } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -72,8 +73,8 @@ export default function PaginaDeAulas(): React.JSX.Element {
         await avisarPresenca(aula.id, userId, vem ? 'present' : 'absent');
         setRecado(vem ? 'Avisamos que você vem.' : 'Avisamos que você não vem.');
         if (!vem) setEscrevendoPara(aula.id);
-      } catch {
-        setErro('Não foi possível avisar. Verifique a conexão e tente de novo.');
+      } catch (falha) {
+        setErro(mensagemDoAviso(falha));
       } finally {
         setOcupado(false);
       }
@@ -92,7 +93,7 @@ export default function PaginaDeAulas(): React.JSX.Element {
         setRecado('Justificativa enviada. A academia vai analisar.');
         await carregar();
       } catch (falha) {
-        setErro(falha instanceof Error ? falha.message : 'Não foi possível enviar.');
+        setErro(mensagemDaJustificativa(falha));
       } finally {
         setOcupado(false);
       }
