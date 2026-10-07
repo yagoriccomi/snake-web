@@ -331,6 +331,10 @@ export async function apagarConta(id: string): Promise<void> {
   if (nomes.length > 0) {
     await db.storage.from(BUCKET_DE_COMPROVANTES).remove(nomes);
   }
+  // O anexo do motivo guarda quem enviou sem cascata (é evidência): sem
+  // apagá-lo antes, o banco recusa apagar o perfil.
+  const anexos = await db.from('action_reason_attachments').delete().eq('uploaded_by', id);
+  if (anexos.error !== null) throw new Error(`E2E: apagar os anexos falhou: ${anexos.error.message}`);
   const apagado = await db.auth.admin.deleteUser(id);
   if (apagado.error !== null && !/not found/i.test(apagado.error.message)) {
     throw new Error(`E2E: apagar a conta falhou: ${apagado.error.message}`);
@@ -339,7 +343,17 @@ export async function apagarConta(id: string): Promise<void> {
     const { error } = await db.from('action_reasons').delete().in('id', idsDosMotivos);
     if (error !== null) throw new Error(`E2E: apagar os motivos falhou: ${error.message}`);
   }
+  await apagarFilaDeExclusao(id);
   await apagarRastro([id, ...idsDasFaturas]);
+}
+
+/**
+ * Apagar um anexo põe o arquivo na fila de exclusão da Cloudinary. Os do teste
+ * nunca existiram lá, então a fila deles sai junto (o caminho tem o id do autor).
+ */
+async function apagarFilaDeExclusao(userId: string): Promise<void> {
+  const { error } = await banco().from('media_deletion_queue').delete().like('asset_ref', `%/${userId}/%`);
+  if (error !== null) throw new Error(`E2E: limpar a fila de exclusão falhou: ${error.message}`);
 }
 
 // ----------------------------------------------------------------------------
