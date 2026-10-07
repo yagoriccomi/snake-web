@@ -11,6 +11,8 @@ import {
   TIPOS_ACEITOS,
 } from '@/lib/comprovante';
 import { formatarData, formatarDinheiro } from '@/lib/dados';
+import { motivoDaFalhaDeLeitura } from '@/lib/erros';
+import { buscarMensalidadeParaPagar } from '@/lib/pagamento';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -21,7 +23,7 @@ interface Mensalidade {
   valorCentavos: number;
 }
 
-type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'nao-encontrada';
+type Estado = 'carregando' | 'pronto' | 'enviando' | 'enviado' | 'nao-encontrada' | 'erro';
 
 /**
  * Pagar uma mensalidade: copiar a chave PIX e enviar o comprovante.
@@ -47,33 +49,35 @@ function Pagamento({ id }: { id: string }): React.JSX.Element {
   const [chavePix, setChavePix] = useState<string | null>(null);
   const [copiada, setCopiada] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [motivoDaFalha, setMotivoDaFalha] = useState('');
   const seletorDeArquivo = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    void (async () => {
-      const [{ data: pagamento }, { data: config }] = await Promise.all([
-        supabase
-          .from('payments')
-          .select('id, due_date, amount_cents, status')
-          .eq('id', id)
-          .maybeSingle(),
-        supabase.from('academy_settings').select('pix_key').maybeSingle(),
-      ]);
-
-      if (pagamento === null) {
+  const carregar = useCallback(async () => {
+    try {
+      const encontrada = await buscarMensalidadeParaPagar(supabase, id);
+      if (encontrada === null) {
         setEstado('nao-encontrada');
         return;
       }
       setMensalidade({
-        id: String(pagamento.id),
-        vencimento: String(pagamento.due_date),
-        valorCentavos: Number(pagamento.amount_cents),
+        id: encontrada.id,
+        vencimento: encontrada.vencimento,
+        valorCentavos: encontrada.valorCentavos,
       });
-      const chave = config?.pix_key ?? null;
-      setChavePix(chave !== null && String(chave).trim() !== '' ? String(chave) : null);
-      setEstado(pagamento.status === 'pending_approval' ? 'enviado' : 'pronto');
-    })();
+      setChavePix(encontrada.chavePix);
+      setEstado(encontrada.emAnalise ? 'enviado' : 'pronto');
+    } catch (falha) {
+      setMotivoDaFalha(motivoDaFalhaDeLeitura(falha));
+      setEstado('erro');
+    }
   }, [id]);
+
+  // O estado só muda depois da rede, nunca no corpo do efeito: nada de render em cascata.
+  useEffect(() => {
+    void (async () => {
+      await carregar();
+    })();
+  }, [carregar]);
 
   const copiar = useCallback(async () => {
     if (chavePix === null) return;
@@ -117,6 +121,18 @@ function Pagamento({ id }: { id: string }): React.JSX.Element {
 
   if (estado === 'carregando') {
     return <main className={estilos.aviso} role="status">Carregando…</main>;
+  }
+
+  if (estado === 'erro') {
+    return (
+      <main className={estilos.aviso}>
+        <h1 className={estilos.titulo}>Não foi possível carregar</h1>
+        <p className={estilos.texto}>{motivoDaFalha}</p>
+        <button className={estilos.botaoSecundario} type="button" onClick={() => void carregar()}>
+          Tentar de novo
+        </button>
+      </main>
+    );
   }
 
   if (estado === 'nao-encontrada') {
