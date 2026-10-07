@@ -2,6 +2,7 @@
 
 import { useCallback, useState, type FormEvent } from 'react';
 
+import { CampoDeSenha } from '@/components/CampoDeSenha';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -79,10 +80,9 @@ export default function PaginaDeEntrada(): React.JSX.Element {
           <label className={estilos.rotulo} htmlFor="senha">
             Senha
           </label>
-          <input
+          <CampoDeSenha
             id="senha"
             className={estilos.entrada}
-            type="password"
             autoComplete="current-password"
             value={senha}
             onChange={(evento) => setSenha(evento.target.value)}

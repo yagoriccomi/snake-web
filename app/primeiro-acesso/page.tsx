@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
+import { CampoDeSenha } from '@/components/CampoDeSenha';
 import { Protegida } from '@/components/Protegida';
 import { mensagemDaFalha } from '@/lib/erros';
 import { concluirPrimeiroAcesso, SENHA_IGUAL } from '@/lib/primeiroAcesso';
@@ -226,10 +227,9 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
           <label className={estilos.rotulo} htmlFor="senha">
             Nova senha
           </label>
-          <input
+          <CampoDeSenha
             id="senha"
             className={estilos.entrada}
-            type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             autoComplete="new-password"
@@ -255,10 +255,9 @@ function PrimeiroAcesso({ userId }: { userId: string }): React.JSX.Element {
           <label className={estilos.rotulo} htmlFor="confirmacao">
             Repita a senha
           </label>
-          <input
+          <CampoDeSenha
             id="confirmacao"
             className={estilos.entrada}
-            type="password"
             value={confirmacao}
             onChange={(e) => setConfirmacao(e.target.value)}
             autoComplete="new-password"
