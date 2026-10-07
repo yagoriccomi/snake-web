@@ -6,7 +6,7 @@ import { ConfirmarDesistencia } from '@/components/ConfirmarDesistencia';
 import { FolhaDeTroca } from '@/components/FolhaDeTroca';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import type { AcoesDaAula } from '@/hooks/useAcoesDaAula';
-import { MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA } from '@/lib/anexos';
+import { MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA, MAXIMO_DE_ANEXOS_DO_MOTIVO } from '@/lib/anexos';
 import {
   acoesDeDeclarar,
   estadoDaAula,
@@ -75,6 +75,7 @@ export function AulaComAcoes({
           limite={TAMANHO_MAXIMO_DO_MOTIVO}
           rotuloDoEnvio="Enviar pedido"
           rotuloDoFechar="Voltar"
+          maximoDeAnexos={MAXIMO_DE_ANEXOS_DO_MOTIVO}
           onEnviar={(texto) => acoes.contestar(aula.id, texto)}
           onFechar={acoes.fecharFormularios}
         />

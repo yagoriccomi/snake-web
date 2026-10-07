@@ -1,14 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { EtapasDoEnvio } from '@/lib/anexos';
 import type { SituacaoDaJustificativa } from '@/lib/aulas';
 import { ErroDeValidacao } from '@/lib/erros';
+import { criarMotivo, etapasDoMotivo } from '@/lib/motivos';
 
 /**
  * "Eu estava na aula" (contrato § 9.3, D40): o aluno pede a retificação da
  * chamada. Quem pode pedir, em qual aula e até quando, é o banco que decide
- * (`can_contest`, T19); aqui só se manda o motivo e se acompanha.
- *
- * Os anexos do pedido esperam o G2 (rota `POST /v1/motivos/sign-upload`).
+ * (`can_contest`, T19); aqui só se manda o motivo, com até 5 anexos, e se
+ * acompanha.
  */
 
 /** Limite do banco para o texto do motivo (btrim 1..500). */
@@ -17,7 +18,7 @@ export const TAMANHO_MAXIMO_DO_MOTIVO = 500;
 /** A frase do banco para o motivo vazio ou longo, conferida antes da rede. */
 const MOTIVO_INVALIDO = 'Escreva o motivo, com até 500 caracteres.';
 
-export const PEDIDO_ENVIADO = 'Pedido enviado. Acompanhe a resposta em Meus pedidos.';
+const PEDIDO_ENVIADO ='Pedido enviado. Acompanhe a resposta em Meus pedidos.';
 
 export interface MinhaSolicitacao {
   id: string;
@@ -28,33 +29,52 @@ export interface MinhaSolicitacao {
   aprovadaPor: string | null;
 }
 
-/** Cria o motivo e abre o pedido, nesta ordem (§ 9.3). Devolve o id do pedido. */
+/** O recado do fim; avisa quando algum anexo ficou de fora. */
+export function recadoDoPedido(faltouAnexo: boolean): string {
+  return faltouAnexo
+    ? 'Pedido enviado, sem os anexos que falharam. Acompanhe a resposta em Meus pedidos.'
+    : PEDIDO_ENVIADO;
+}
+
+/**
+ * Nesta ordem (§ 9.3): cria o motivo, e as etapas devolvidas anexam os
+ * arquivos e só então abrem o pedido com ele.
+ *
+ * @param aoConcluir O que a tela faz com o pedido aberto (recado, recarregar).
+ */
 export async function pedirEuEstavaNaAula(
   cliente: SupabaseClient,
   classId: string,
   texto: string,
-): Promise<string> {
+  aoConcluir: (faltouAnexo: boolean) => Promise<void>,
+): Promise<EtapasDoEnvio> {
   const limpo = texto.trim();
   if (limpo === '' || limpo.length > TAMANHO_MAXIMO_DO_MOTIVO) {
     throw new ErroDeValidacao(MOTIVO_INVALIDO);
   }
-  const motivo = await cliente.rpc('criar_motivo', {
-    p_kind: 'request_evidence',
-    p_class_id: classId,
-    p_texto: limpo,
+  const motivoId = await criarMotivo(cliente, {
+    tipo: 'request_evidence',
+    classId,
+    texto: limpo,
   });
-  if (motivo.error !== null) {
-    throw motivo.error;
-  }
-  const pedido = await cliente.rpc('abrir_solicitacao', {
-    p_kind: 'student_was_present',
-    p_class_id: classId,
-    p_motivo_id: motivo.data,
+
+  // Se o pedido abriu e o passo seguinte da tela falhou, o "Tentar de novo"
+  // não pode abrir um segundo pedido com o mesmo motivo.
+  let aberto = false;
+  return etapasDoMotivo(cliente, motivoId, async (faltouAnexo) => {
+    if (!aberto) {
+      const { error } = await cliente.rpc('abrir_solicitacao', {
+        p_kind: 'student_was_present',
+        p_class_id: classId,
+        p_motivo_id: motivoId,
+      });
+      if (error !== null) {
+        throw error;
+      }
+      aberto = true;
+    }
+    await aoConcluir(faltouAnexo);
   });
-  if (pedido.error !== null) {
-    throw pedido.error;
-  }
-  return String(pedido.data);
 }
 
 /** Os pedidos do aluno; a web só abre o "Eu estava na aula". */
