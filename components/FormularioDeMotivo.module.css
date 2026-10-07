@@ -49,6 +49,24 @@
   line-height: 1.4;
 }
 
+.avisoDoAnexo {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* O nome do arquivo pode ser comprido e sem espaços. */
+.falhas {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.progresso {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .acoes {
   display: flex;
   gap: 8px;

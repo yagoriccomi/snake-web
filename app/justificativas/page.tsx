@@ -5,12 +5,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { BlocoDeContato } from '@/components/BlocoDeContato';
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
+import {
+  etapasDaJustificativa,
+  MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA,
+  type EtapasDoEnvio,
+} from '@/lib/anexos';
 import { diaEMesDoInstante } from '@/lib/aulas';
 import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
   assuntoDaJustificativa,
   buscarMinhasJustificativas,
   negadaPelaSegundaVez,
+  recadoDaJustificativa,
   reenviarJustificativa,
   rotuloDaJustificativa,
   type MinhaJustificativa,
@@ -58,11 +64,15 @@ function Justificativas(): React.JSX.Element {
     })();
   }, [carregar]);
 
-  const reenviar = async (id: string, texto: string): Promise<void> => {
+  // D42: o reenvio volta a linha para pendente e sem anexo, e o anexo novo
+  // entra com o nome da 2ª tentativa, que o servidor decide.
+  const reenviar = async (id: string, texto: string): Promise<EtapasDoEnvio> => {
     await reenviarJustificativa(supabase, id, texto);
-    setReenviando(null);
-    setRecado('Justificativa reenviada. A academia vai analisar.');
-    await carregar();
+    return etapasDaJustificativa(supabase, id, async (faltouAnexo) => {
+      setReenviando(null);
+      setRecado(recadoDaJustificativa('reenviada', faltouAnexo));
+      await carregar();
+    });
   };
 
   if (estado === 'carregando') {
@@ -129,6 +139,7 @@ function Justificativas(): React.JSX.Element {
                   titulo="Reenviar a justificativa"
                   contexto={`${assuntoDaJustificativa(j)} · é a última tentativa.`}
                   rotuloDoEnvio="Reenviar"
+                  maximoDeAnexos={MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA}
                   onEnviar={(texto) => reenviar(j.id, texto)}
                   onFechar={() => setReenviando(null)}
                 />

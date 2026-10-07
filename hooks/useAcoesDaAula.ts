@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from 'react';
 
+import { etapasDaJustificativa, type EtapasDoEnvio } from '@/lib/anexos';
 import { avisoDeCota, declararAula, type AcaoDeDeclarar, type AulaDoAluno } from '@/lib/aulas';
 import { mensagemDaFalha } from '@/lib/erros';
-import { enviarJustificativa } from '@/lib/justificativas';
+import { enviarJustificativa, recadoDaJustificativa } from '@/lib/justificativas';
 import { PEDIDO_ENVIADO, pedirEuEstavaNaAula } from '@/lib/solicitacoes';
 import {
   desistirDaTroca,
@@ -27,8 +28,6 @@ const RECADO_DA_ACAO: Record<AcaoDeDeclarar['rotulo'], string> = {
   Desmarcar: 'Marcação desfeita.',
 };
 
-const JUSTIFICATIVA_ENVIADA = 'Justificativa enviada. A academia vai analisar.';
-
 export interface AcoesDaAula {
   ocupado: boolean;
   erro: string | null;
@@ -44,7 +43,7 @@ export interface AcoesDaAula {
   desistindoAula: string | null;
   declarar: (aula: AulaDoAluno, acao: AcaoDeDeclarar) => Promise<void>;
   desfazerAcimaDaCota: () => Promise<void>;
-  justificar: (classId: string, texto: string) => Promise<void>;
+  justificar: (classId: string, texto: string) => Promise<EtapasDoEnvio>;
   contestar: (classId: string, texto: string) => Promise<void>;
   abrirContestacao: (classId: string) => void;
   abrirTroca: (classId: string) => void;
@@ -118,10 +117,12 @@ export function useAcoesDaAula(recarregar: () => Promise<void>): AcoesDaAula {
   // Os dois formulários tratam o próprio erro; aqui só o que vem depois do sucesso.
   const justificar = useCallback(
     async (classId: string, texto: string) => {
-      await enviarJustificativa(supabase, { escopo: 'class', classId, texto });
-      setJustificandoAula(null);
-      setRecado(JUSTIFICATIVA_ENVIADA);
-      await recarregar();
+      const id = await enviarJustificativa(supabase, { escopo: 'class', classId, texto });
+      return etapasDaJustificativa(supabase, id, async (faltouAnexo) => {
+        setJustificandoAula(null);
+        setRecado(recadoDaJustificativa('enviada', faltouAnexo));
+        await recarregar();
+      });
     },
     [recarregar],
   );

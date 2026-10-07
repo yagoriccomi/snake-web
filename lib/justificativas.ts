@@ -9,8 +9,8 @@ import { ErroDeValidacao } from '@/lib/erros';
  * grade e reenvio são do banco; os rótulos são os da § 3, com a mesma leitura
  * do app (`snake-thai/src/utils/justificativas.ts`).
  *
- * O anexo (atestado) espera o G2: as rotas novas do servidor ainda não estão
- * em produção. Até lá, a justificativa vai só com o texto.
+ * O anexo (atestado) vai depois do texto, pelo `lib/anexos.ts`: o banco só
+ * aceita anexo numa justificativa que já existe.
  */
 
 /** Limite do banco para o texto (btrim 1..255). */
@@ -22,6 +22,18 @@ const TEXTO_OBRIGATORIO = 'Escreva o motivo da falta.';
 /** § 3: a 2ª negada encerra o caminho (D42); vem com o bloco de contato (6.15). */
 export const NEGADA_PELA_SEGUNDA_VEZ =
   'Justificativa negada. Para mais informações, procure o professor da aula ou a administração da academia.';
+
+/**
+ * O recado depois do envio. Sem o anexo, ele diz isso: a pessoa pode ter
+ * escolhido seguir sem um arquivo que achava que tinha ido.
+ */
+export function recadoDaJustificativa(
+  envio: 'enviada' | 'reenviada',
+  faltouAnexo: boolean,
+): string {
+  const semAnexo = faltouAnexo ? ', sem o anexo' : '';
+  return `Justificativa ${envio}${semAnexo}. A academia vai analisar.`;
+}
 
 export type EnvioDeJustificativa =
   | { escopo: 'class'; classId: string; texto: string }

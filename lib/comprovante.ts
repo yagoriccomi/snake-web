@@ -1,7 +1,8 @@
 'use client';
 
+import { enviarACloudinary, nomeSeguro, pedirAssinatura } from '@/lib/envioAssinado';
 import { env } from '@/lib/env';
-import { codigoDoCorpo, mensagemDoServidor } from '@/lib/erros';
+import { ErroDeEnvio } from '@/lib/erros';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -10,65 +11,12 @@ import { supabase } from '@/lib/supabase';
  * É a única parte da página que passa pelo backend próprio, e por um motivo:
  * a assinatura do upload exige um segredo da Cloudinary que jamais pode viver
  * no navegador. O servidor assina, e o arquivo vai **direto** do celular da
- * pessoa para a Cloudinary — sem passar pelo nosso servidor, que é o caminho
- * que o aplicativo já usa.
+ * pessoa para a Cloudinary (`lib/envioAssinado.ts`) — sem passar pelo nosso
+ * servidor, que é o caminho que o aplicativo já usa.
  */
 
-interface UploadAssinado {
-  uploadUrl: string;
-  apiKey: string;
-  timestamp: number;
-  signature: string;
-  folder: string;
-  public_id: string;
-  type: string;
-}
-
-/** Erro com mensagem pronta para a tela — sem detalhe técnico. */
-export class ErroDeEnvio extends Error {}
-
-/** Tira do nome do arquivo o que a Cloudinary e o Storage recusam. */
-function nomeSeguro(nome: string): string {
-  return nome.replace(/[^\w.\-]+/g, '_').slice(0, 120);
-}
-
-async function pedirAssinatura(paymentId: string): Promise<UploadAssinado> {
-  const { data: sessao } = await supabase.auth.getSession();
-  const token = sessao.session?.access_token;
-  if (token === undefined) {
-    throw new ErroDeEnvio('Sua sessão expirou. Entre de novo para enviar o comprovante.');
-  }
-
-  let resposta: Response;
-  try {
-    resposta = await fetch(`${env.apiUrl}/v1/proofs/sign-upload`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ paymentId }),
-    });
-  } catch {
-    // Falha de rede aqui inclui o CORS: o navegador recusa a resposta e o
-    // fetch rejeita sem status. Dizer "sem conexão" seria mentira cômoda,
-    // então a mensagem admite que pode ser o servidor.
-    throw new ErroDeEnvio(
-      'Não conseguimos falar com o servidor. Verifique sua internet e tente de novo.',
-    );
-  }
-
-  if (!resposta.ok) {
-    // Um corpo que não é JSON (a Render na frente do servidor, por exemplo)
-    // não tem `code`, e quem decide então é o status.
-    const corpo: unknown = await resposta.json().catch(() => null);
-    throw new ErroDeEnvio(
-      mensagemDoServidor(
-        { status: resposta.status, code: codigoDoCorpo(corpo) },
-        'preparar o envio',
-      ),
-    );
-  }
-
-  return (await resposta.json()) as UploadAssinado;
-}
+// A página de pagamento importa o erro daqui desde antes dos anexos.
+export { ErroDeEnvio };
 
 /**
  * Envia o comprovante e deixa o pagamento em análise.
@@ -82,36 +30,18 @@ export async function enviarComprovante(paymentId: string, arquivo: File): Promi
   // para o Storage, como no aplicativo: só muda onde o arquivo mora, e
   // `proof_provider` registra qual dos dois foi. A escolha é uma variável
   // explícita, não uma palavra dentro da URL assinada: o desvio fica visível.
+  // Vale só para o comprovante: anexo nunca vai para o Storage (T25).
   if (env.proofUploadToStorage) {
     await enviarParaStorage(paymentId, arquivo);
     return;
   }
 
-  const assinatura = await pedirAssinatura(paymentId);
-
-  const formulario = new FormData();
-  formulario.append('file', arquivo, nomeSeguro(arquivo.name));
-  formulario.append('api_key', assinatura.apiKey);
-  formulario.append('timestamp', String(assinatura.timestamp));
-  formulario.append('signature', assinatura.signature);
-  formulario.append('folder', assinatura.folder);
-  formulario.append('public_id', assinatura.public_id);
-  formulario.append('type', assinatura.type);
-
-  const envio = await fetch(assinatura.uploadUrl, { method: 'POST', body: formulario });
-  if (!envio.ok) {
-    // Só o status vai para o console. O corpo da recusa pode trazer o
-    // public_id, que carrega o id da pessoa, e o console do navegador não é
-    // lugar de dado pessoal. O status basta para separar conta mal
-    // configurada (4xx) de falha do provedor (5xx).
-    console.error(`Upload recusado pela Cloudinary (HTTP ${envio.status}).`);
-    throw new ErroDeEnvio(
-      envio.status >= 500
-        ? 'O serviço de arquivos falhou. Tente de novo em instantes.'
-        : 'O arquivo não foi aceito. Tente uma foto menor ou outro formato.',
-    );
-  }
-  const enviado = (await envio.json()) as { public_id?: string };
+  const assinatura = await pedirAssinatura({
+    rota: '/v1/proofs/sign-upload',
+    corpo: { paymentId },
+    oQueEnvia: 'o comprovante',
+  });
+  const publicId = await enviarACloudinary(assinatura, arquivo);
 
   // O pagamento só vira "em análise" DEPOIS que o arquivo está lá. Se a ordem
   // fosse outra, uma falha no upload deixaria a mensalidade em análise sem
@@ -121,7 +51,7 @@ export async function enviarComprovante(paymentId: string, arquivo: File): Promi
     .update({
       status: 'pending_approval',
       proof_provider: 'cloudinary',
-      proof_public_id: enviado.public_id ?? `${assinatura.folder}/${assinatura.public_id}`,
+      proof_public_id: publicId,
       proof_storage_path: null,
     })
     .eq('id', paymentId);

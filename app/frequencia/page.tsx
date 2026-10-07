@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FormularioDeMotivo } from '@/components/FormularioDeMotivo';
 import { Protegida } from '@/components/Protegida';
+import {
+  etapasDaJustificativa,
+  MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA,
+  type EtapasDoEnvio,
+} from '@/lib/anexos';
 import { chaveDoDia, diaEMesDoInstante, formatarDiaEHora } from '@/lib/aulas';
 import { motivoDaFalhaDeLeitura } from '@/lib/erros';
 import {
@@ -31,7 +36,11 @@ import {
   tomDaSituacao,
   type AulaDoHistorico,
 } from '@/lib/historico';
-import { enviarJustificativa, rotuloDaJustificativa } from '@/lib/justificativas';
+import {
+  enviarJustificativa,
+  recadoDaJustificativa,
+  rotuloDaJustificativa,
+} from '@/lib/justificativas';
 import { supabase } from '@/lib/supabase';
 
 import estilos from './page.module.css';
@@ -98,11 +107,13 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
     setMes(alvo);
   };
 
-  const justificarSemana = async (semana: string, texto: string): Promise<void> => {
-    await enviarJustificativa(supabase, { escopo: 'week', semana, texto });
-    setJustificando(null);
-    setRecado('Justificativa enviada. A academia vai analisar.');
-    await carregar(mes);
+  const justificarSemana = async (semana: string, texto: string): Promise<EtapasDoEnvio> => {
+    const id = await enviarJustificativa(supabase, { escopo: 'week', semana, texto });
+    return etapasDaJustificativa(supabase, id, async (faltouAnexo) => {
+      setJustificando(null);
+      setRecado(recadoDaJustificativa('enviada', faltouAnexo));
+      await carregar(mes);
+    });
   };
 
   const rotulos = rotulosDaFrequencia(doMes?.modalidade ?? null);
@@ -257,6 +268,7 @@ function Frequencia({ userId }: { userId: string }): React.JSX.Element {
                   {justificando === semana.inicio ? (
                     <FormularioDeMotivo
                       titulo={`Justificar 1 aula · semana ${diaEMesDaData(semana.inicio)}–${diaEMesDaData(semana.fim)}`}
+                      maximoDeAnexos={MAXIMO_DE_ANEXOS_DA_JUSTIFICATIVA}
                       onEnviar={(texto) => justificarSemana(semana.inicio, texto)}
                       onFechar={() => setJustificando(null)}
                     />
