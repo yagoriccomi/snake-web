@@ -51,7 +51,66 @@ export type AcaoQueFalhou =
   | 'salvar'
   | 'abrir a meta'
   | 'registrar seu aceite'
-  | 'concluir';
+  | 'concluir'
+  | 'preparar o envio';
+
+/**
+ * A frase da web para cada `code` do servidor (contrato v6, § 13.6). A web
+ * decide pelo `code`, nunca pelo texto que o servidor manda (regra 1): o do
+ * `bad_input` cita o nome do campo, que não é texto para o aluno.
+ *
+ * `bad_request` e `internal_error` ficam de fora de propósito: são os
+ * genéricos de cada categoria (regra 2) e caem na genérica da web.
+ */
+const MENSAGEM_DO_CODIGO_DO_SERVIDOR: Readonly<Record<string, string>> = {
+  // Comuns a todas as rotas.
+  malformed_json: 'A página enviou um pedido com defeito. Atualize a página e tente de novo.',
+  bad_input: 'A página enviou um dado que não é válido. Atualize a página e tente de novo.',
+  payload_too_large: 'O pedido ficou grande demais para o servidor.',
+  no_token: 'Sua sessão expirou. Entre de novo para continuar.',
+  bad_token_format: 'Não reconhecemos a sua sessão. Entre de novo para continuar.',
+  bad_token: 'Sua sessão não vale mais. Entre de novo para continuar.',
+  route_not_found: 'Esta função não está disponível agora. Atualize a página e tente de novo.',
+  rate_limited: 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
+  // Falha do Supabase: 503 e 504 valem nova tentativa; 502 não resolve tentando agora.
+  supabase_unreachable:
+    'Não conseguimos falar com o servidor de dados. Tente de novo em instantes.',
+  supabase_timeout: 'O servidor de dados demorou demais para responder. Tente de novo.',
+  supabase_invalid_response:
+    'O servidor de dados respondeu de forma inesperada. Se continuar, fale com a academia.',
+  // De cada rota.
+  forbidden: 'Você não tem acesso a este item.',
+  proof_not_found: 'Este pagamento não tem comprovante.',
+  proof_not_on_cloudinary: 'Este comprovante está no armazenamento antigo e não abre por aqui.',
+  justification_not_pending: 'Esta justificativa já foi decidida e não aceita anexo.',
+  justification_already_has_attachment: 'Esta justificativa já tem anexo.',
+  justification_attachment_not_found: 'Esta justificativa não tem anexo.',
+  justification_attachment_not_on_cloudinary:
+    'Este anexo da justificativa está no armazenamento antigo e não abre por aqui.',
+  justification_attachment_path_mismatch:
+    'O anexo desta justificativa não está no lugar esperado. Fale com a academia.',
+  motivo_attachment_not_on_cloudinary:
+    'Este anexo do pedido está no armazenamento antigo e não abre por aqui.',
+};
+
+/**
+ * Sem `code`, a resposta não saiu do handler do servidor (por exemplo, da
+ * Render na frente dele). O status decide só onde a § 13.6 lhe dá um sentido
+ * único para o aluno; 404, 409 e os 5xx têm mais de um e vão para a genérica.
+ */
+const CODIGO_DO_STATUS: Readonly<Record<number, string>> = {
+  401: 'bad_token',
+  403: 'forbidden',
+  413: 'payload_too_large',
+  429: 'rate_limited',
+};
+
+/** O que a web sabe de uma resposta de erro do `snake-server`. */
+export interface RespostaDoServidor {
+  status: number;
+  /** O `code` do corpo; vazio quando o corpo não é o JSON do servidor. */
+  code: string;
+}
 
 /** Erro de preenchimento que a própria web detecta antes de ir ao banco. */
 export class ErroDeValidacao extends Error {
@@ -106,5 +165,34 @@ export function mensagemDaFalha(falha: unknown, acao: AcaoQueFalhou): string {
   if (ehFalhaDeRede(falha)) {
     return `Não foi possível ${acao}. Verifique a conexão e tente de novo.`;
   }
+  return mensagemGenerica(acao);
+}
+
+function mensagemGenerica(acao: AcaoQueFalhou): string {
   return `Não foi possível ${acao}. Tente de novo em instantes.`;
+}
+
+/**
+ * O `code` de um corpo de erro do servidor (`{ error, code, traceId }`);
+ * vazio quando o corpo não tem esse formato.
+ *
+ * @param corpo O JSON da resposta, ou `null` quando ele não pôde ser lido.
+ */
+export function codigoDoCorpo(corpo: unknown): string {
+  return campo(corpo, 'code');
+}
+
+/**
+ * A frase da tela para uma resposta de erro do `snake-server`.
+ *
+ * @param resposta O status e o `code` do corpo.
+ * @param acao     O que o aluno tentava fazer, para a genérica.
+ */
+export function mensagemDoServidor(resposta: RespostaDoServidor, acao: AcaoQueFalhou): string {
+  const codigo = resposta.code !== '' ? resposta.code : (CODIGO_DO_STATUS[resposta.status] ?? '');
+  // O `code` vem de fora, e "constructor" não pode achar o protótipo. Sem
+  // `Object.hasOwn`: celular com Safari anterior ao 15.4 não o tem.
+  return Object.prototype.hasOwnProperty.call(MENSAGEM_DO_CODIGO_DO_SERVIDOR, codigo)
+    ? MENSAGEM_DO_CODIGO_DO_SERVIDOR[codigo]
+    : mensagemGenerica(acao);
 }
